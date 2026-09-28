@@ -12,14 +12,12 @@ export default function EditarDoador() {
 
   useEffect(() => {
     let ativo = true;
-    fetch('/api/doadores')
+    fetch(`/api/doadores/${id}`)
       .then((r) => r.json())
       .then((dados) => {
         if (!ativo) return;
-        if (!dados.ok) throw new Error(dados.erro || 'Falha ao carregar.');
-        const encontrado = (dados.doadores || []).find((d) => d.id === id);
-        if (!encontrado) throw new Error('Doador não encontrado — o cadastro pode ter sido removido.');
-        setDoador(encontrado);
+        if (!dados.ok) throw new Error(dados.erro || 'Doador não encontrado — o cadastro pode ter sido removido.');
+        setDoador(dados.doador);
       })
       .catch((e) => setErro(e.message));
     return () => {

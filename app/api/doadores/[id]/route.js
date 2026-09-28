@@ -95,3 +95,47 @@ export async function PUT(requisicao, { params }) {
     );
   }
 }
+
+// ------------------------------------------------------------------ READ (um doador)
+export async function GET(requisicao, { params }) {
+  try {
+    const { id } = await params;
+    const doador = await new Parse.Query(CLASSE_DOADOR).get(id);
+    return NextResponse.json({ ok: true, doador: parseParaObjeto(doador) });
+  } catch (erro) {
+    // Código 101 do Parse = objeto não encontrado.
+    if (erro.code === 101) {
+      return NextResponse.json({ erro: 'Doador não encontrado.' }, { status: 404 });
+    }
+    console.error('[API /doadores/:id GET]', erro);
+    return NextResponse.json(
+      { erro: 'Erro ao buscar doador: ' + erro.message },
+      { status: 500 }
+    );
+  }
+}
+
+// ---------------------------------------------------------------- DELETE
+export async function DELETE(requisicao, { params }) {
+  try {
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ erro: 'ID do doador é obrigatório.' }, { status: 400 });
+    }
+
+    const doador = await new Parse.Query(CLASSE_DOADOR).get(id);
+    await doador.destroy();
+
+    return NextResponse.json({ ok: true, mensagem: 'Cadastro removido com sucesso.' });
+  } catch (erro) {
+    // Código 101 do Parse = objeto não encontrado (já removido ou ID inválido).
+    if (erro.code === 101) {
+      return NextResponse.json({ erro: 'Doador não encontrado.' }, { status: 404 });
+    }
+    console.error('[API /doadores/:id DELETE]', erro);
+    return NextResponse.json(
+      { erro: 'Erro ao excluir doador: ' + erro.message },
+      { status: 500 }
+    );
+  }
+}

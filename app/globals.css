@@ -1,0 +1,699 @@
+/* ==========================================================================
+   SANGUE SOLIDÁRIO — CSS global (CSS puro, sem frameworks)
+   ========================================================================== */
+
+:root {
+  --vermelho: #d7263d;
+  --vermelho-escuro: #a31226;
+  --vermelho-claro: #fdecee;
+  --tinta: #1d2433;
+  --tinta-suave: #5a6472;
+  --borda: #e3e7ee;
+  --fundo: #f6f8fb;
+  --branco: #ffffff;
+  --verde: #1d8a4e;
+  --verde-claro: #e5f6ec;
+  --amarelo: #8a6d1d;
+  --amarelo-claro: #fdf6e0;
+  --raio: 12px;
+  --sombra: 0 1px 3px rgba(23, 32, 55, 0.08), 0 8px 24px rgba(23, 32, 55, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+  background: var(--fundo);
+  color: var(--tinta);
+  line-height: 1.55;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.main {
+  flex: 1;
+  padding-top: 32px;
+  padding-bottom: 64px;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 1.35rem;
+  margin: 0 0 12px;
+}
+
+a {
+  color: var(--vermelho);
+}
+
+/* ---------------------------------------------------------------- Header */
+.site-header {
+  background: var(--branco);
+  border-bottom: 1px solid var(--borda);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--tinta);
+  font-size: 1.15rem;
+}
+
+.logo-icone {
+  font-size: 1.4rem;
+}
+
+.logo-texto strong {
+  color: var(--vermelho);
+}
+
+.nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--tinta-suave);
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 8px 12px;
+  border-radius: 999px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-link:hover {
+  background: var(--vermelho-claro);
+  color: var(--vermelho-escuro);
+}
+
+.nav-link-ativo {
+  background: var(--vermelho);
+  color: var(--branco);
+}
+
+.nav-link-ativo:hover {
+  background: var(--vermelho-escuro);
+  color: var(--branco);
+}
+
+/* -------------------------------------------------------------- Botões */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--raio);
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.05s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primario {
+  background: var(--vermelho);
+  color: var(--branco);
+  box-shadow: var(--sombra);
+}
+
+.btn-primario:hover {
+  background: var(--vermelho-escuro);
+}
+
+.btn-secundario {
+  background: var(--branco);
+  border-color: var(--vermelho);
+  color: var(--vermelho);
+}
+
+.btn-secundario:hover {
+  background: var(--vermelho-claro);
+}
+
+.btn-neutro {
+  background: var(--branco);
+  border-color: var(--borda);
+  color: var(--tinta-suave);
+}
+
+.btn-neutro:hover {
+  border-color: var(--tinta-suave);
+  color: var(--tinta);
+}
+
+.btn-perigo {
+  background: var(--vermelho-escuro);
+  color: var(--branco);
+}
+
+.btn-whatsapp {
+  background: var(--verde);
+  color: var(--branco);
+}
+
+.btn-whatsapp:hover {
+  background: #166c3c;
+}
+
+.btn-grande {
+  padding: 14px 26px;
+  font-size: 1.05rem;
+}
+
+/* ------------------------------------------------------------ Landing */
+.hero {
+  background: linear-gradient(135deg, var(--vermelho) 0%, #7c0f1e 100%);
+  color: var(--branco);
+  border-radius: 18px;
+  padding: 56px 40px;
+  text-align: center;
+  box-shadow: var(--sombra);
+}
+
+.hero h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin-bottom: 12px;
+}
+
+.hero-sub {
+  max-width: 640px;
+  margin: 0 auto 28px;
+  font-size: 1.08rem;
+  opacity: 0.94;
+}
+
+.hero-acoes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hero-acoes .btn-secundario {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.7);
+  color: var(--branco);
+}
+
+.hero-acoes .btn-secundario:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hero-acoes .btn-branco {
+  background: var(--branco);
+  color: var(--vermelho-escuro);
+}
+
+.destaques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.destaque {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 20px;
+  box-shadow: var(--sombra);
+}
+
+.destaque-icone {
+  font-size: 1.6rem;
+}
+
+.destaque h3 {
+  margin: 8px 0 4px;
+  font-size: 1.02rem;
+}
+
+.destaque p {
+  margin: 0;
+  color: var(--tinta-suave);
+  font-size: 0.92rem;
+}
+
+.como-funciona {
+  margin-top: 40px;
+}
+
+.passos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  counter-reset: passo;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.passos li {
+  counter-increment: passo;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 18px;
+  font-size: 0.93rem;
+  color: var(--tinta-suave);
+}
+
+.passos li::before {
+  content: counter(passo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--vermelho-claro);
+  color: var(--vermelho-escuro);
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+/* ------------------------------------------------------------- Cards */
+.card,
+.cartao {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 24px;
+  box-shadow: var(--sombra);
+}
+
+.grade-resultados {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.card-doador {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 18px;
+  box-shadow: var(--sombra);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-nome {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.card-info {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+  display: grid;
+  gap: 4px;
+}
+
+.card-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.card-acoes .btn {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------------- Badges */
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge-ok {
+  background: var(--verde-claro);
+  color: var(--verde);
+}
+
+.badge-motivo {
+  background: var(--amarelo-claro);
+  color: var(--amarelo);
+}
+
+.badge-tipo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--branco);
+  background: var(--vermelho);
+}
+
+.badge-On { background: #7c0f1e; }
+.badge-Op { background: var(--vermelho); }
+.badge-An { background: #7a1f3d; }
+.badge-Ap { background: #9c2b4e; }
+.badge-Bn { background: #1f3d7a; }
+.badge-Bp { background: #2b4e9c; }
+.badge-ABn { background: #1d5e5a; }
+.badge-ABp { background: #2b8a84; }
+
+/* -------------------------------------------------------- Formulários */
+.formulario {
+  display: grid;
+  gap: 16px;
+}
+
+.linha {
+  display: grid;
+  gap: 16px;
+}
+
+.linha-2 {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.linha-3 {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo label {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.campo input,
+.campo select {
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: var(--branco);
+  color: var(--tinta);
+  width: 100%;
+}
+
+.campo input:focus,
+.campo select:focus {
+  outline: 2px solid var(--vermelho);
+  outline-offset: 1px;
+  border-color: var(--vermelho);
+}
+
+.dica {
+  color: var(--tinta-suave);
+  font-size: 0.8rem;
+}
+
+.dica-cep {
+  font-size: 0.8rem;
+}
+
+.dica-ok {
+  color: var(--verde);
+}
+
+.dica-erro {
+  color: var(--vermelho-escuro);
+}
+
+.rotulo-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.rotulo-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--vermelho);
+}
+
+.campo-check .dica {
+  margin-top: 2px;
+}
+
+.acoes-form {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.alerta-erro {
+  background: var(--vermelho-claro);
+  color: var(--vermelho-escuro);
+  border: 1px solid #f3c2ca;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.alerta-info {
+  background: var(--amarelo-claro);
+  color: var(--amarelo);
+  border: 1px solid #efe1ad;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------ Tabelas */
+.tabela-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  background: var(--branco);
+  box-shadow: var(--sombra);
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 640px;
+}
+
+.tabela th,
+.tabela td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--borda);
+  vertical-align: middle;
+}
+
+.tabela thead th {
+  background: #fbfcfe;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tinta-suave);
+}
+
+.tabela tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabela tbody tr:hover {
+  background: #fafbfd;
+}
+
+.tabela .col-acoes {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.tabela .col-acoes .btn {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+
+/* ------------------------------------------------------- Compatibilidade */
+.compat-tabela-wrap {
+  overflow-x: auto;
+}
+
+.compat-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 520px;
+}
+
+.compat-tabela th,
+.compat-tabela td {
+  border: 1px solid var(--borda);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.compat-tabela thead th {
+  background: #fbfcfe;
+}
+
+.compat-tipo {
+  font-weight: 800;
+  color: var(--vermelho-escuro);
+}
+
+/* ------------------------------------------------------------- Busca */
+.busca-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.cabecalho-pagina {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.cabecalho-pagina p {
+  margin: 4px 0 0;
+  color: var(--tinta-suave);
+}
+
+.contador-resultados {
+  color: var(--tinta-suave);
+  font-size: 0.92rem;
+}
+
+.vazio {
+  text-align: center;
+  color: var(--tinta-suave);
+  background: var(--branco);
+  border: 1px dashed var(--borda);
+  border-radius: var(--raio);
+  padding: 40px 20px;
+  margin-top: 20px;
+}
+
+/* ------------------------------------------------------------- Footer */
+.site-footer {
+  background: var(--branco);
+  border-top: 1px solid var(--borda);
+  padding: 24px 0;
+  margin-top: auto;
+}
+
+.footer-inner p {
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  color: var(--tinta-suave);
+}
+
+.footer-aviso {
+  font-size: 0.78rem !important;
+}
+
+/* ---------------------------------------------------------------- Mapa */
+.mapa-card {
+  margin-top: 20px;
+}
+
+.mapa-card h2 {
+  margin-bottom: 12px;
+}
+
+.mapa-embed {
+  width: 100%;
+  height: 320px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  display: block;
+}
+
+/* ------------------------------------------------------- Responsivo */
+@media (max-width: 640px) {
+  .hero {
+    padding: 40px 20px;
+  }
+
+  .header-inner {
+    justify-content: center;
+  }
+}

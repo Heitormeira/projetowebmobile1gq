@@ -1,0 +1,22 @@
+{
+  "name": "sangue-solidario",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma colaborativa que conecta receptores a doadores de sangue compatíveis e disponíveis (React + Next.js + Node + Back4App/Parse Server).",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "seed": "node scripts/seed-back4app.mjs",
+    "verificar-ambiente": "node scripts/verificar-ambiente.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "parse": "^6.1.1"
+  },
+  "devDependencies": {
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  }
+}

@@ -1,29 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { TIPOS_SANGUINEOS, tiposCompativeisCom } from '@/lib/regras';
+import { tiposCompativeisCom } from '@/lib/regras';
+import { mascararCep } from '@/lib/formatar';
 import DoadorCard from '@/components/DoadorCard';
+import SeletorTipo from '@/components/SeletorTipo';
+import Aviso from '@/components/Aviso';
 
 export default function BuscarDoadores() {
   const [tipoReceptor, setTipoReceptor] = useState('');
   const [cidade, setCidade] = useState('');
-  const [bairro, setBairro] = useState('');
   const [cepOrigem, setCepOrigem] = useState('');
   const [resultados, setResultados] = useState(null); // null = ainda não buscou
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
+  const tituloResultados = useRef(null);
+
+  // Depois da busca, leva a pessoa direto ao resultado (a tela do celular é comprida).
+  // O foco vai para o título (leitores de tela leem o resultado) e a tela rola até ele,
+  // sem animação para quem pediu menos movimento no aparelho.
+  useEffect(() => {
+    const titulo = tituloResultados.current;
+    if (resultados === null || !titulo) return;
+    titulo.focus({ preventScroll: true });
+    const menosMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    titulo.scrollIntoView({ behavior: menosMovimento ? 'auto' : 'smooth', block: 'start' });
+  }, [resultados]);
 
   async function buscar(evento) {
     evento.preventDefault();
     setErro('');
-    setCarregando(true);
 
+    if (!tipoReceptor) {
+      setErro('Escolha primeiro o tipo sanguíneo de quem vai receber o sangue.');
+      return;
+    }
+
+    setCarregando(true);
     try {
       const parametros = new URLSearchParams();
-      if (tipoReceptor) parametros.set('tipoReceptor', tipoReceptor);
+      parametros.set('tipoReceptor', tipoReceptor);
       if (cidade.trim()) parametros.set('cidade', cidade.trim());
-      if (bairro.trim()) parametros.set('bairro', bairro.trim());
       if (cepOrigem.replace(/\D/g, '').length === 8) {
         parametros.set('cepOrigem', cepOrigem.replace(/\D/g, ''));
       }
@@ -31,7 +49,7 @@ export default function BuscarDoadores() {
 
       const resposta = await fetch(`/api/doadores?${parametros.toString()}`);
       const dados = await resposta.json();
-      if (!resposta.ok) throw new Error(dados.erro || 'Falha na busca.');
+      if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível buscar agora. Tente de novo.');
 
       setResultados(dados.doadores);
     } catch (e) {
@@ -45,95 +63,90 @@ export default function BuscarDoadores() {
   const compativeis = tipoReceptor ? tiposCompativeisCom(tipoReceptor) : null;
   const maisProximo = resultados && resultados.length > 0 ? resultados[0] : null;
   const temDistancias = resultados?.some((d) => d.distanciaKm != null);
+  const total = resultados ? resultados.length : 0;
 
   return (
     <div>
-      <div className="cabecalho-pagina">
-        <div>
-          <h1>🩸 Preciso de sangue</h1>
-          <p>Informe o tipo que você precisa receber e onde procura o doador.</p>
-        </div>
+      <div className="titulo-pagina">
+        <h1>Preciso de sangue</h1>
+        <p>Responda os dois passos abaixo e veja quem pode ajudar.</p>
       </div>
 
-      <form className="card formulario" onSubmit={buscar}>
-        <div className="busca-grid">
-          <div className="campo">
-            <label htmlFor="tipoReceptor">Seu tipo sanguíneo (receptor) *</label>
-            <select
-              id="tipoReceptor"
-              value={tipoReceptor}
-              onChange={(e) => setTipoReceptor(e.target.value)}
-              required
-            >
-              <option value="">Selecione…</option>
-              {TIPOS_SANGUINEOS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="campo">
-            <label htmlFor="cepOrigem">Seu CEP (opcional)</label>
-            <input
-              id="cepOrigem"
-              inputMode="numeric"
-              value={cepOrigem}
-              onChange={(e) => setCepOrigem(e.target.value)}
-              placeholder="00000-000 — ordena por distância"
-            />
-            <small className="dica">Usa Nominatim/OpenStreetMap + fórmula de Haversine.</small>
-          </div>
-
-          <div className="campo">
-            <label htmlFor="cidade">Cidade</label>
-            <input
-              id="cidade"
-              value={cidade}
-              onChange={(e) => setCidade(e.target.value)}
-              placeholder="Ex.: Recife (opcional)"
-            />
-          </div>
-
-          <div className="campo">
-            <label htmlFor="bairro">Bairro</label>
-            <input
-              id="bairro"
-              value={bairro}
-              onChange={(e) => setBairro(e.target.value)}
-              placeholder="Filtro opcional"
-            />
-          </div>
-
-          <div className="campo">
-            <button className="btn btn-primario" type="submit" disabled={carregando}>
-              {carregando ? 'Buscando…' : 'Buscar doadores'}
-            </button>
-          </div>
+      <form className="formulario" onSubmit={buscar}>
+        <div>
+          <SeletorTipo
+            legenda="1. Qual é o tipo sanguíneo de quem vai receber?"
+            valor={tipoReceptor}
+            aoEscolher={setTipoReceptor}
+          />
+          {compativeis && (
+            <div style={{ marginTop: '1rem' }}>
+              <Aviso
+                aviso={{
+                  tipo: 'info',
+                  texto: `Podem doar para quem tem sangue ${tipoReceptor}: ${compativeis.join(', ')}.`,
+                }}
+              />
+            </div>
+          )}
         </div>
 
-        {compativeis && (
-          <p className="alerta-info" style={{ margin: 0 }}>
-            Compatíveis com <strong>{tipoReceptor}</strong>: {compativeis.join(', ')} —
-            a busca já considera disponibilidade e carência entre doações.
-          </p>
-        )}
+        <fieldset>
+          <legend>2. Onde procurar? (opcional)</legend>
+          <div className="linha-2" style={{ marginTop: '0.6rem' }}>
+            <div className="campo">
+              <label htmlFor="cidade">Cidade</label>
+              <input
+                id="cidade"
+                value={cidade}
+                onChange={(e) => setCidade(e.target.value)}
+                placeholder="Ex.: Recife"
+              />
+            </div>
+            <div className="campo">
+              <label htmlFor="cepOrigem">Seu CEP</label>
+              <input
+                id="cepOrigem"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                value={cepOrigem}
+                onChange={(e) => setCepOrigem(mascararCep(e.target.value))}
+                placeholder="00000-000"
+              />
+              <p className="dica">Com o CEP, os doadores aparecem do mais perto ao mais longe.</p>
+            </div>
+          </div>
+        </fieldset>
 
-        {erro && <p className="alerta-erro" role="alert">{erro}</p>}
+        {erro && <Aviso aviso={{ tipo: 'erro', texto: erro }} />}
+
+        <button className="btn btn-grande" type="submit" disabled={carregando}>
+          {carregando ? 'Buscando…' : 'Buscar doadores'}
+        </button>
       </form>
 
       {resultados !== null && (
-        <>
-          <p className="contador-resultados">
-            {resultados.length === 0
-              ? 'Nenhum doador encontrado'
-              : `${resultados.length} doador(es) compatível(is) e disponível(is)`}
+        <section aria-live="polite">
+          <h2 className="contagem" ref={tituloResultados} tabIndex={-1}>
+            {total === 0
+              ? 'Ninguém encontrado agora'
+              : `${total} ${total === 1 ? 'pessoa pode' : 'pessoas podem'} ajudar`}
             {cidade.trim() ? ` em ${cidade.trim()}` : ''}
-            {temDistancias ? ' — ordenados pela distância do seu CEP' : ''}.
-          </p>
+          </h2>
+          {total > 0 && temDistancias && (
+            <p className="dica" style={{ marginBottom: '1rem' }}>
+              Ordenados do mais perto ao mais longe do seu CEP.
+            </p>
+          )}
 
           {maisProximo && maisProximo.latitude != null && (
-            <div className="card mapa-card">
-              <h2>Doador mais próximo{maisProximo.distanciaKm != null ? ` (~${maisProximo.distanciaKm} km)` : ''}</h2>
+            <div className="mapa">
+              <h3>
+                Doador mais próximo
+                {maisProximo.distanciaKm != null
+                  ? `: cerca de ${String(maisProximo.distanciaKm).replace('.', ',')} km`
+                  : ''}
+              </h3>
               <iframe
                 title="Mapa do doador mais próximo (OpenStreetMap)"
                 className="mapa-embed"
@@ -147,29 +160,24 @@ export default function BuscarDoadores() {
             </div>
           )}
 
-          {resultados.length === 0 ? (
+          {total === 0 ? (
             <div className="vazio">
-              <p><strong>Nenhum doador compatível encontrado agora.</strong></p>
-              <p>Tente remover o filtro de cidade/bairro para ampliar a busca.</p>
+              <p>
+                <strong>Nenhum doador compatível apareceu agora.</strong>
+              </p>
+              <p>Tente apagar a cidade para ampliar a busca.</p>
+              <p>
+                Conhece alguém que possa doar? <Link href="/cadastro">Peça para se cadastrar</Link>.
+              </p>
             </div>
           ) : (
-            <div className="grade-resultados">
+            <div className="lista-doadores">
               {resultados.map((d) => (
                 <DoadorCard key={d.id} doador={d} />
               ))}
             </div>
           )}
-        </>
-      )}
-
-      {resultados === null && !carregando && (
-        <div className="vazio">
-          <p>Selecione seu tipo sanguíneo e clique em <strong>Buscar doadores</strong>.</p>
-          <p>
-            É doador e quer aparecer nas buscas?{' '}
-            <Link href="/cadastro">Cadastre-se aqui</Link>.
-          </p>
-        </div>
+        </section>
       )}
     </div>
   );

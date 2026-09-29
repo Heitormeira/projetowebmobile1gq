@@ -2,40 +2,43 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { CARENCIA_DIAS, CARENCIA_PADRAO_DIAS, diasDesde, doadorDisponivel } from '@/lib/regras';
+import { comDdi, descreverTipo, formatarData, formatarTelefone } from '@/lib/formatar';
 
-export function BadgeTipo({ tipo }) {
-  return <span className={`badge-tipo badge-${tipo.replace('+', 'p').replace('-', 'n')}`}>{tipo}</span>;
-}
+const MENSAGEM_WHATSAPP =
+  'Olá! Vi seu cadastro no Sangue Solidário e estou procurando um doador de sangue. Você poderia me ajudar?';
 
-export function BadgeDisponibilidade({ doador }) {
-  if (doador.disponivel) {
-    return <span className="badge badge-ok">Disponível</span>;
+/** Situação do doador em linguagem simples, usando as regras de carência do projeto. */
+function situacaoDoDoador(doador) {
+  if (!doador.disponivel) {
+    return { ok: false, texto: 'Indisponível no momento' };
   }
-  return <span className="badge badge-motivo">Indisponível</span>;
+  if (!doadorDisponivel(doador)) {
+    const carencia = CARENCIA_DIAS[String(doador.sexo || '').toLowerCase()] || CARENCIA_PADRAO_DIAS;
+    const restam = Math.max(carencia - (diasDesde(doador.ultimaDoacao) ?? 0), 1);
+    return { ok: false, texto: `Descansando depois de doar — pode doar de novo em ${restam} dia(s)` };
+  }
+  return { ok: true, texto: 'Disponível para doar' };
 }
 
-function formatarTelefone(tel) {
-  const d = String(tel || '').replace(/\D/g, '');
-  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return tel || '—';
-}
-
-function formatarData(iso) {
-  if (!iso) return '—';
-  const [ano, mes, dia] = String(iso).slice(0, 10).split('-');
-  return `${dia}/${mes}/${ano}`;
-}
-
-export default function DoadorCard({ doador, podeGerenciar = false, aoExcluir }) {
+/**
+ * Cartão de doador.
+ * - mostrarContato: telefone, WhatsApp e ligação. Nas listas públicas fica desligado,
+ *   para não expor o telefone de todo mundo; na busca de quem precisa de sangue fica ligado.
+ * - podeGerenciar: mostra Editar e Excluir (com confirmação na própria tela).
+ * - aoErro(texto): avisa a página quando a exclusão falha.
+ */
+export default function DoadorCard({
+  doador,
+  podeGerenciar = false,
+  mostrarContato = true,
+  aoExcluir,
+  aoErro,
+}) {
   const [confirmando, setConfirmando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
 
-  async function excluir() {
-    if (!confirmando) {
-      setConfirmando(true);
-      return;
-    }
+  async function excluirAgora() {
     setExcluindo(true);
     try {
       const resposta = await fetch(`/api/doadores/${doador.id}`, { method: 'DELETE' });
@@ -43,77 +46,108 @@ export default function DoadorCard({ doador, podeGerenciar = false, aoExcluir })
       if (!resposta.ok) throw new Error(dados.erro || 'Falha ao remover.');
       aoExcluir?.(doador.id);
     } catch (erro) {
-      alert(`Não foi possível remover: ${erro.message}`);
+      aoErro?.(`Não foi possível excluir: ${erro.message}`);
       setExcluindo(false);
       setConfirmando(false);
     }
   }
 
-  const local = [doador.bairro, doador.cidade, doador.uf].filter(Boolean).join(' · ');
+  const local = [doador.bairro, doador.cidade, doador.uf].filter(Boolean).join(', ');
   const temCoordenadas = doador.latitude != null && doador.longitude != null;
+  const telefone = comDdi(doador.telefoneContato);
+  const situacao = situacaoDoDoador(doador);
 
   return (
-    <article className="card-doador">
-      <div className="card-topo">
-        <BadgeTipo tipo={doador.tipoSanguineo} />
-        <BadgeDisponibilidade doador={doador} />
+    <article className="doador">
+      <div className="doador-topo">
+        <span className="tipo-selo" aria-label={`Tipo sanguíneo ${descreverTipo(doador.tipoSanguineo)}`}>
+          {doador.tipoSanguineo}
+        </span>
+        <h3 className="doador-nome">{doador.nome}</h3>
       </div>
 
-      <h3 className="card-nome">{doador.nome}</h3>
-
-      <ul className="card-info">
-        <li>
-          <span aria-hidden="true">📍</span> {local || 'Localização não informada'}
-          {doador.distanciaKm != null && <strong> — ~{doador.distanciaKm} km de você</strong>}
-        </li>
-        <li>
-          <span aria-hidden="true">📅</span> Última doação: {formatarData(doador.ultimaDoacao)}
-        </li>
-        <li>
-          <span aria-hidden="true">☎️</span> {formatarTelefone(doador.telefoneContato)}
-        </li>
-      </ul>
-
-      <div className="card-acoes">
-        <a
-          className="btn btn-whatsapp"
-          href={`https://wa.me/55${String(doador.telefoneContato).replace(/\D/g, '')}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Chamar no WhatsApp
-        </a>
-        <a className="btn btn-secundario" href={`tel:+55${String(doador.telefoneContato).replace(/\D/g, '')}`}>
-          Ligar
-        </a>
-
-        {temCoordenadas && (
-          <a
-            className="btn btn-neutro"
-            href={`https://www.openstreetmap.org/?mlat=${doador.latitude}&mlon=${doador.longitude}#map=15/${doador.latitude}/${doador.longitude}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Ver no mapa
-          </a>
+      <dl className="dados">
+        <div>
+          <dt>Local</dt>
+          <dd>
+            {local || 'Não informado'}
+            {doador.distanciaKm != null && (
+              <> — a cerca de {String(doador.distanciaKm).replace('.', ',')} km de você</>
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Última doação</dt>
+          <dd>{doador.ultimaDoacao ? formatarData(doador.ultimaDoacao) : 'Nunca doou'}</dd>
+        </div>
+        <div>
+          <dt>Situação</dt>
+          <dd className={situacao.ok ? 'situacao-ok' : 'situacao-nao'}>{situacao.texto}</dd>
+        </div>
+        {mostrarContato && (
+          <div>
+            <dt>Telefone</dt>
+            <dd className="telefone">{formatarTelefone(doador.telefoneContato)}</dd>
+          </div>
         )}
+      </dl>
 
-        {podeGerenciar && (
-          <>
-            <Link className="btn btn-neutro" href={`/doadores/${doador.id}/editar`}>
-              Editar
-            </Link>
-            <button
-              type="button"
-              className={`btn ${confirmando ? 'btn-perigo' : 'btn-neutro'}`}
-              onClick={excluir}
-              disabled={excluindo}
-            >
-              {excluindo ? 'Removendo…' : confirmando ? 'Confirmar exclusão?' : 'Excluir'}
+      {(mostrarContato || podeGerenciar) && !confirmando && (
+        <div className="acoes">
+          {mostrarContato && (
+            <>
+              <a
+                className="btn btn-verde"
+                href={`https://wa.me/${telefone}?text=${encodeURIComponent(MENSAGEM_WHATSAPP)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Chamar no WhatsApp
+              </a>
+              <a className="btn btn-neutro" href={`tel:+${telefone}`}>
+                Ligar agora
+              </a>
+              {temCoordenadas && (
+                <a
+                  className="btn btn-neutro"
+                  href={`https://www.openstreetmap.org/?mlat=${doador.latitude}&mlon=${doador.longitude}#map=15/${doador.latitude}/${doador.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ver no mapa
+                </a>
+              )}
+            </>
+          )}
+
+          {podeGerenciar && (
+            <>
+              <Link className="btn btn-neutro" href={`/doadores/${doador.id}/editar`}>
+                Editar
+              </Link>
+              <button type="button" className="btn btn-secundario" onClick={() => setConfirmando(true)}>
+                Excluir
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {confirmando && (
+        <div className="confirmar" role="group" aria-label="Confirmar exclusão">
+          <p>
+            <strong>Excluir o cadastro de {doador.nome}?</strong> Isso não pode ser desfeito.
+          </p>
+          <div className="acoes">
+            <button type="button" className="btn" onClick={excluirAgora} disabled={excluindo}>
+              {excluindo ? 'Excluindo…' : 'Sim, excluir'}
             </button>
-          </>
-        )}
-      </div>
+            <button type="button" className="btn btn-neutro" onClick={() => setConfirmando(false)} disabled={excluindo}>
+              Não, voltar
+            </button>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

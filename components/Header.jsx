@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -13,19 +14,36 @@ const links = [
 
 export default function Header() {
   const pathname = usePathname();
+  const [aberto, setAberto] = useState(false);
+
+  // Fecha o menu do celular ao trocar de página.
+  useEffect(() => {
+    setAberto(false);
+  }, [pathname]);
+
   const ativo = (href) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
   return (
-    <header className="site-header">
-      <div className="container header-inner">
-        <Link href="/" className="logo" aria-label="Sangue Solidário — página inicial">
-          <span className="logo-icone" aria-hidden="true">🩸</span>
-          <span className="logo-texto">
-            Sangue <strong>Solidário</strong>
-          </span>
-        </Link>
+    <header className="cabecalho">
+      <div className="container">
+        <div className="cabecalho-topo">
+          <Link href="/" className="logo">
+            Sangue <span>Solidário</span>
+          </Link>
 
-        <nav className="nav" aria-label="Navegação principal">
+          {/* Botão com texto (e não só ícone) para ficar claro para todos. */}
+          <button
+            type="button"
+            className="menu-botao"
+            aria-expanded={aberto}
+            aria-controls="menu-principal"
+            onClick={() => setAberto((v) => !v)}
+          >
+            {aberto ? 'Fechar menu' : 'Menu'}
+          </button>
+        </div>
+
+        <nav id="menu-principal" className={`nav${aberto ? ' nav-aberto' : ''}`} aria-label="Menu principal">
           {links.map((l) => (
             <Link
               key={l.href}

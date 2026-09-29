@@ -2,43 +2,47 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import DoadorCard, { BadgeTipo, BadgeDisponibilidade } from '@/components/DoadorCard';
+import DoadorCard from '@/components/DoadorCard';
+import Aviso from '@/components/Aviso';
+import { lerAvisoSalvo } from '@/lib/aviso';
 import { TIPOS_SANGUINEOS } from '@/lib/regras';
 
 export default function ListaDoadores() {
   const [doadores, setDoadores] = useState(null); // null = carregando
-  const [erro, setErro] = useState('');
+  const [aviso, setAviso] = useState(null);
   const [tipoFiltro, setTipoFiltro] = useState('');
   const [cidadeFiltro, setCidadeFiltro] = useState('');
   const [busca, setBusca] = useState('');
-  const [visao, setVisao] = useState('tabela'); // 'tabela' | 'cards'
 
   const carregar = useCallback(async () => {
-    setErro('');
     try {
       const resposta = await fetch('/api/doadores');
       const dados = await resposta.json();
-      if (!resposta.ok) throw new Error(dados.erro || 'Falha ao carregar doadores.');
+      if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível carregar a lista.');
       setDoadores(dados.doadores);
     } catch (e) {
-      setErro(e.message);
+      setAviso({ tipo: 'erro', texto: e.message });
       setDoadores([]);
     }
   }, []);
 
   useEffect(() => {
+    // Aviso deixado por outra tela (ex.: "Cadastro removido.").
+    const salvo = lerAvisoSalvo();
+    if (salvo) setAviso(salvo);
     carregar();
   }, [carregar]);
 
   function aoExcluir(id) {
     setDoadores((atuais) => (atuais || []).filter((d) => d.id !== id));
+    setAviso({ tipo: 'ok', texto: 'Cadastro excluído.' });
   }
 
   if (doadores === null) {
-    return <p className="contador-resultados">Carregando doadores…</p>;
+    return <p>Carregando a lista…</p>;
   }
 
-  // Filtros client-side complementares (o READ completo vem da API).
+  // Os filtros funcionam na hora, enquanto a pessoa digita.
   const filtrados = doadores.filter((d) => {
     if (tipoFiltro && d.tipoSanguineo !== tipoFiltro) return false;
     if (cidadeFiltro && !(d.cidade || '').toLowerCase().includes(cidadeFiltro.toLowerCase())) return false;
@@ -48,149 +52,83 @@ export default function ListaDoadores() {
 
   return (
     <div>
-      <div className="cabecalho-pagina">
-        <div>
-          <h1>Doadores cadastrados</h1>
-          <p>Listagem completa — o “R” do CRUD, direto do Back4App.</p>
-        </div>
-        <Link className="btn btn-primario" href="/cadastro">+ Cadastrar doador</Link>
+      <div className="titulo-pagina">
+        <h1>Doadores cadastrados</h1>
+        <p>
+          Veja quem já se cadastrou. Para falar com alguém, use a página “Preciso de sangue”.
+        </p>
       </div>
 
-      <div className="card formulario">
-        <div className="busca-grid">
-          <div className="campo">
-            <label htmlFor="busca">Buscar por nome/bairro</label>
-            <input
-              id="busca"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Digite parte do nome…"
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="filtroTipo">Tipo sanguíneo</label>
-            <select id="filtroTipo" value={tipoFiltro} onChange={(e) => setTipoFiltro(e.target.value)}>
-              <option value="">Todos</option>
-              {TIPOS_SANGUINEOS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-          <div className="campo">
-            <label htmlFor="filtroCidade">Cidade contém</label>
-            <input
-              id="filtroCidade"
-              value={cidadeFiltro}
-              onChange={(e) => setCidadeFiltro(e.target.value)}
-              placeholder="Ex.: Recife"
-            />
-          </div>
-          <div className="campo">
-            <button
-              type="button"
-              className="btn btn-neutro"
-              onClick={() => setVisao((v) => (v === 'tabela' ? 'cards' : 'tabela'))}
-            >
-              {visao === 'tabela' ? '▦ Ver como cards' : '☰ Ver como tabela'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-neutro"
-              onClick={carregar}
-              title="Recarregar do Back4App"
-            >
-              ↻ Atualizar
-            </button>
-          </div>
+      <div className="botoes" style={{ marginTop: 0, marginBottom: '1.8rem' }}>
+        <Link className="btn" href="/cadastro">
+          Cadastrar um doador
+        </Link>
+      </div>
+
+      <Aviso aviso={aviso} aoFechar={() => setAviso(null)} />
+
+      <div className="filtros">
+        <div className="campo">
+          <label htmlFor="busca">Nome ou bairro</label>
+          <input
+            id="busca"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Digite parte do nome"
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="filtroTipo">Tipo sanguíneo</label>
+          <select id="filtroTipo" value={tipoFiltro} onChange={(e) => setTipoFiltro(e.target.value)}>
+            <option value="">Todos os tipos</option>
+            {TIPOS_SANGUINEOS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="campo">
+          <label htmlFor="filtroCidade">Cidade</label>
+          <input
+            id="filtroCidade"
+            value={cidadeFiltro}
+            onChange={(e) => setCidadeFiltro(e.target.value)}
+            placeholder="Ex.: Recife"
+          />
         </div>
       </div>
 
-      {erro && <p className="alerta-erro" role="alert">{erro}</p>}
-
-      <p className="contador-resultados">
-        {filtrados.length} de {doadores.length} doador(es) exibido(s).
+      <p aria-live="polite">
+        <strong>
+          Mostrando {filtrados.length} de {doadores.length}
+        </strong>{' '}
+        {doadores.length === 1 ? 'cadastro' : 'cadastros'}.
       </p>
 
       {filtrados.length === 0 ? (
         <div className="vazio">
-          <p><strong>Nenhum doador encontrado com esses filtros.</strong></p>
-          <p>Limpe os filtros ou <Link href="/cadastro">cadastre o primeiro doador</Link>.</p>
-        </div>
-      ) : visao === 'tabela' ? (
-        <div className="tabela-wrap">
-          <table className="tabela">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Sexo</th>
-                <th>Cidade/UF</th>
-                <th>Bairro</th>
-                <th>Última doação</th>
-                <th>Status</th>
-                <th className="col-acoes">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((d) => (
-                <tr key={d.id}>
-                  <td>{d.nome}</td>
-                  <td><BadgeTipo tipo={d.tipoSanguineo} /></td>
-                  <td>{d.sexo ? (d.sexo === 'masculino' ? 'M' : 'F') : '—'}</td>
-                  <td>{[d.cidade, d.uf].filter(Boolean).join('/') || '—'}</td>
-                  <td>{d.bairro || '—'}</td>
-                  <td>{d.ultimaDoacao || '—'}</td>
-                  <td><BadgeDisponibilidade doador={d} /></td>
-                  <td className="col-acoes">
-                    <Link className="btn btn-neutro" href={`/doadores/${d.id}/editar`}>Editar</Link>
-                    <ExcluirBotao id={d.id} aoExcluir={aoExcluir} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <p>
+            <strong>Ninguém encontrado com esses filtros.</strong>
+          </p>
+          <p>
+            Apague os filtros ou <Link href="/cadastro">faça o primeiro cadastro</Link>.
+          </p>
         </div>
       ) : (
-        <div className="grade-resultados">
+        <div className="lista-doadores">
           {filtrados.map((d) => (
-            <DoadorCard key={d.id} doador={d} podeGerenciar />
+            <DoadorCard
+              key={d.id}
+              doador={d}
+              podeGerenciar
+              mostrarContato={false}
+              aoExcluir={aoExcluir}
+              aoErro={(texto) => setAviso({ tipo: 'erro', texto })}
+            />
           ))}
         </div>
       )}
     </div>
-  );
-}
-
-function ExcluirBotao({ id, aoExcluir }) {
-  const [confirmando, setConfirmando] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
-
-  async function excluir() {
-    if (!confirmando) {
-      setConfirmando(true);
-      return;
-    }
-    setExcluindo(true);
-    try {
-      const resposta = await fetch(`/api/doadores/${id}`, { method: 'DELETE' });
-      const dados = await resposta.json();
-      if (!resposta.ok) throw new Error(dados.erro || 'Falha ao remover.');
-      aoExcluir(id);
-    } catch (e) {
-      alert(`Não foi possível remover: ${e.message}`);
-      setExcluindo(false);
-      setConfirmando(false);
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      className={`btn ${confirmando ? 'btn-perigo' : 'btn-neutro'}`}
-      onClick={excluir}
-      disabled={excluindo}
-    >
-      {excluindo ? 'Removendo…' : confirmando ? 'Confirmar?' : 'Excluir'}
-    </button>
   );
 }

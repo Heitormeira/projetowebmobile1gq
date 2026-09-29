@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { cepEhValido } from '@/lib/viacep';
+import { mascararCep } from '@/lib/formatar';
 
 /**
  * Campo de CEP integrado à API externa ViaCEP:
  * ao completar 8 dígitos, preenche automaticamente cidade, bairro e UF.
- * Props: value, onChange(novosValores), erro
+ * Props: value, onChange(novosValores)
  */
-export default function CampoCep({ value, onChange, erro }) {
+export default function CampoCep({ value, onChange }) {
   const [status, setStatus] = useState(null); // null | 'buscando' | 'ok' | 'erro'
   const [mensagem, setMensagem] = useState('');
 
@@ -23,7 +23,7 @@ export default function CampoCep({ value, onChange, erro }) {
 
     let cancelado = false;
     setStatus('buscando');
-    setMensagem('Consultando CEP…');
+    setMensagem('Procurando o endereço…');
 
     fetch(`/api/cep?cep=${digitos}`)
       .then((r) => r.json())
@@ -31,17 +31,17 @@ export default function CampoCep({ value, onChange, erro }) {
         if (cancelado) return;
         if (dados.ok) {
           setStatus('ok');
-          setMensagem(`${dados.cidade}/${dados.uf}${dados.bairro ? ` — ${dados.bairro}` : ''}`);
+          setMensagem(`Endereço encontrado: ${dados.cidade}/${dados.uf}${dados.bairro ? ` — ${dados.bairro}` : ''}`);
           onChange({ cidade: dados.cidade, bairro: dados.bairro, uf: dados.uf });
         } else {
           setStatus('erro');
-          setMensagem(dados.erro || 'CEP não encontrado.');
+          setMensagem(dados.erro || 'CEP não encontrado. Confira os números.');
         }
       })
       .catch(() => {
         if (!cancelado) {
           setStatus('erro');
-          setMensagem('Falha ao consultar o ViaCEP.');
+          setMensagem('Não foi possível consultar o CEP agora. Tente de novo em instantes.');
         }
       });
 
@@ -51,32 +51,25 @@ export default function CampoCep({ value, onChange, erro }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  function aoDigitar(evento) {
-    const digitos = evento.target.value.replace(/\D/g, '').slice(0, 8);
-    const formatado = digitos.length > 5 ? `${digitos.slice(0, 5)}-${digitos.slice(5)}` : digitos;
-    onChange({ cep: formatado });
-  }
-
   return (
     <div className="campo">
-      <label htmlFor="cep">CEP *</label>
+      <label htmlFor="cep">CEP</label>
       <input
         id="cep"
         name="cep"
         inputMode="numeric"
+        autoComplete="postal-code"
         placeholder="00000-000"
         value={value}
-        onChange={aoDigitar}
+        onChange={(e) => onChange({ cep: mascararCep(e.target.value) })}
         required
       />
+      <p className="dica">A cidade e o bairro são preenchidos sozinhos.</p>
       {status && (
-        <small className={`dica-cep ${status === 'erro' ? 'dica-erro' : 'dica-ok'}`} aria-live="polite">
-          {status === 'buscando' ? '⏳ ' : status === 'ok' ? '✅ ' : '⚠️ '}
+        <p className={`status-cep ${status === 'ok' ? 'ok' : status === 'erro' ? 'erro' : ''}`} aria-live="polite">
           {mensagem}
-          {status === 'ok' ? ' (preenchido automaticamente pelo ViaCEP)' : ''}
-        </small>
+        </p>
       )}
-      {erro && <small className="dica-erro">{erro}</small>}
     </div>
   );
 }

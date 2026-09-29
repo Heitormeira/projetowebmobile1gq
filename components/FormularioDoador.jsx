@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { TIPOS_SANGUINEOS } from '@/lib/regras';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import SeletorTipo from './SeletorTipo';
 import CampoCep from './CampoCep';
+import Aviso from './Aviso';
+import { mascararTelefone, removerDdi } from '@/lib/formatar';
 
 const vaziosIniciais = {
   nome: '',
@@ -16,52 +18,89 @@ const vaziosIniciais = {
   disponivel: true,
 };
 
+const OPCOES_SEXO = [
+  { valor: 'feminino', rotulo: 'Feminino' },
+  { valor: 'masculino', rotulo: 'Masculino' },
+  { valor: '', rotulo: 'Prefiro não informar' },
+];
+
 /**
  * Formulário completo de doador.
  * - modo 'criar'  → POST   /api/doadores        (CREATE)
  * - modo 'editar' → PUT    /api/doadores/[id]   (UPDATE)
+ * Ao terminar, mostra uma tela de confirmação (em vez de um alert do navegador).
  */
 export default function FormularioDoador({ modo = 'criar', doadorInicial = null, idDoador = null }) {
-  const router = useRouter();
-  const [valores, setValores] = useState(() => (doadorInicial ? { ...vaziosIniciais, ...doadorInicial } : vaziosIniciais));
+  const [valores, setValores] = useState(() =>
+    doadorInicial
+      ? { ...vaziosIniciais, ...doadorInicial, telefoneContato: mascararTelefone(removerDdi(doadorInicial.telefoneContato)) }
+      : vaziosIniciais
+  );
+  const [nuncaDoou, setNuncaDoou] = useState(() => !(doadorInicial && doadorInicial.ultimaDoacao));
+  const [hoje, setHoje] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
+  const [concluido, setConcluido] = useState(false);
+  const painel = useRef(null);
+  const areaErro = useRef(null);
+
+  // A data de hoje é calculada no navegador (não na hora de gerar a página).
+  useEffect(() => {
+    setHoje(new Date().toLocaleDateString('en-CA'));
+  }, []);
+
+  useEffect(() => {
+    if (concluido) painel.current?.focus();
+  }, [concluido]);
+
+  useEffect(() => {
+    if (erro) areaErro.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [erro]);
 
   function atualizar(novos) {
     setValores((atuais) => ({ ...atuais, ...novos }));
   }
 
+  function novoCadastro() {
+    setValores(vaziosIniciais);
+    setNuncaDoou(true);
+    setConcluido(false);
+  }
+
   async function enviar(evento) {
     evento.preventDefault();
     setErro('');
-    setEnviando(true);
 
+    if (!valores.tipoSanguineo) {
+      setErro('Escolha o seu tipo sanguíneo.');
+      return;
+    }
+    if (!nuncaDoou && !valores.ultimaDoacao) {
+      setErro('Informe a data da última doação ou marque “Nunca doei sangue”.');
+      return;
+    }
+
+    setEnviando(true);
     try {
       const url = modo === 'editar' ? `/api/doadores/${idDoador}` : '/api/doadores';
       const resposta = await fetch(url, {
         method: modo === 'editar' ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nome: valores.nome,
+          nome: valores.nome.trim(),
           tipoSanguineo: valores.tipoSanguineo,
           sexo: valores.sexo,
           cep: valores.cep,
           bairro: valores.bairro,
           telefoneContato: valores.telefoneContato,
-          ultimaDoacao: valores.ultimaDoacao || null,
+          ultimaDoacao: nuncaDoou ? null : valores.ultimaDoacao,
           disponivel: valores.disponivel,
         }),
       });
 
       const dados = await resposta.json();
-      if (!resposta.ok) throw new Error(dados.erro || 'Falha ao salvar.');
-
-      alert(
-        modo === 'editar'
-          ? 'Dados atualizados com sucesso!'
-          : `Cadastro criado! Seu código para edição é: ${dados.id}`
-      );
-      router.push('/doadores');
+      if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível salvar. Tente de novo.');
+      setConcluido(true);
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -69,114 +108,150 @@ export default function FormularioDoador({ modo = 'criar', doadorInicial = null,
     }
   }
 
+  if (concluido) {
+    return (
+      <div className="sucesso" ref={painel} tabIndex={-1} role="status">
+        <h2>{modo === 'editar' ? 'Dados atualizados!' : 'Cadastro feito!'}</h2>
+        <p>
+          {modo === 'editar'
+            ? 'As mudanças já estão salvas.'
+            : 'Obrigado por se colocar à disposição. Se precisar mudar algo depois, use “Meu cadastro” com o seu telefone.'}
+        </p>
+        <div className="botoes">
+          {modo === 'editar' ? (
+            <Link className="btn" href="/doadores">
+              Voltar para a lista
+            </Link>
+          ) : (
+            <>
+              <Link className="btn" href="/">
+                Ir para o início
+              </Link>
+              <button type="button" className="btn btn-neutro" onClick={novoCadastro}>
+                Cadastrar outra pessoa
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form className="formulario" onSubmit={enviar}>
-      <div className="linha">
-        <div className="campo campo-largo">
-          <label htmlFor="nome">Nome completo *</label>
-          <input
-            id="nome"
-            name="nome"
-            value={valores.nome}
-            onChange={(e) => atualizar({ nome: e.target.value })}
-            placeholder="Ex.: Maria Silva"
-            required
-            minLength={3}
-          />
-        </div>
+      <div className="campo">
+        <label htmlFor="nome">Nome completo</label>
+        <input
+          id="nome"
+          name="nome"
+          autoComplete="name"
+          value={valores.nome}
+          onChange={(e) => atualizar({ nome: e.target.value })}
+          placeholder="Ex.: Maria Silva"
+          required
+          minLength={3}
+        />
       </div>
 
-      <div className="linha linha-3">
-        <div className="campo">
-          <label htmlFor="tipoSanguineo">Seu tipo sanguíneo *</label>
-          <select
-            id="tipoSanguineo"
-            name="tipoSanguineo"
-            value={valores.tipoSanguineo}
-            onChange={(e) => atualizar({ tipoSanguineo: e.target.value })}
-            required
-          >
-            <option value="">Selecione…</option>
-            {TIPOS_SANGUINEOS.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
+      <SeletorTipo
+        legenda="Qual é o seu tipo sanguíneo?"
+        dica="Toque no seu tipo. Se não souber, veja no cartão de doador ou pergunte ao seu médico."
+        valor={valores.tipoSanguineo}
+        aoEscolher={(tipo) => atualizar({ tipoSanguineo: tipo })}
+      />
 
-        <div className="campo">
-          <label htmlFor="sexo">Sexo (para a carência)</label>
-          <select id="sexo" name="sexo" value={valores.sexo} onChange={(e) => atualizar({ sexo: e.target.value })}>
-            <option value="">Prefiro não informar</option>
-            <option value="masculino">Masculino</option>
-            <option value="feminino">Feminino</option>
-          </select>
+      <fieldset>
+        <legend>Sexo</legend>
+        <p className="dica">Usado apenas para calcular o intervalo entre doações.</p>
+        <div className="opcoes">
+          {OPCOES_SEXO.map((o) => (
+            <label className="opcao" key={o.rotulo}>
+              <input
+                type="radio"
+                name="sexo"
+                value={o.valor}
+                checked={valores.sexo === o.valor}
+                onChange={() => atualizar({ sexo: o.valor })}
+              />
+              <span>{o.rotulo}</span>
+            </label>
+          ))}
         </div>
+      </fieldset>
 
+      <div className="linha-2">
         <CampoCep value={valores.cep} onChange={atualizar} />
-      </div>
 
-      <div className="linha linha-2">
         <div className="campo">
-          <label htmlFor="bairro">Bairro</label>
+          <label htmlFor="bairro">Bairro (opcional)</label>
           <input
             id="bairro"
             name="bairro"
             value={valores.bairro}
             onChange={(e) => atualizar({ bairro: e.target.value })}
-            placeholder="Preenchido pelo ViaCEP — pode ajustar"
-          />
-        </div>
-
-        <div className="campo">
-          <label htmlFor="telefoneContato">Telefone / WhatsApp *</label>
-          <input
-            id="telefoneContato"
-            name="telefoneContato"
-            inputMode="tel"
-            value={valores.telefoneContato}
-            onChange={(e) => atualizar({ telefoneContato: e.target.value })}
-            placeholder="(81) 99999-9999"
-            required
+            placeholder="Você pode corrigir"
           />
         </div>
       </div>
 
-      <div className="linha linha-2">
-        <div className="campo">
-          <label htmlFor="ultimaDoacao">Data da última doação</label>
-          <input
-            id="ultimaDoacao"
-            name="ultimaDoacao"
-            type="date"
-            value={valores.ultimaDoacao}
-            onChange={(e) => atualizar({ ultimaDoacao: e.target.value })}
-          />
-          <small className="dica">Deixe vazio se nunca doou.</small>
-        </div>
+      <div className="campo">
+        <label htmlFor="telefoneContato">Telefone com DDD (de preferência WhatsApp)</label>
+        <input
+          id="telefoneContato"
+          name="telefoneContato"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          value={valores.telefoneContato}
+          onChange={(e) => atualizar({ telefoneContato: mascararTelefone(e.target.value) })}
+          placeholder="(81) 99999-9999"
+          required
+        />
+        <p className="dica">Só aparece para quem está procurando um doador compatível.</p>
+      </div>
 
-        <div className="campo campo-check">
-          <label className="rotulo-check">
+      <fieldset>
+        <legend>Última doação de sangue</legend>
+        <label className="caixa">
+          <input type="checkbox" checked={nuncaDoou} onChange={(e) => setNuncaDoou(e.target.checked)} />
+          <span>Nunca doei sangue</span>
+        </label>
+        {!nuncaDoou && (
+          <div className="campo" style={{ marginTop: '1rem' }}>
+            <label htmlFor="ultimaDoacao">Data da última doação</label>
             <input
-              type="checkbox"
-              checked={valores.disponivel}
-              onChange={(e) => atualizar({ disponivel: e.target.checked })}
+              id="ultimaDoacao"
+              name="ultimaDoacao"
+              type="date"
+              max={hoje || undefined}
+              value={valores.ultimaDoacao}
+              onChange={(e) => atualizar({ ultimaDoacao: e.target.value })}
             />
-            Estou disponível para doar
-          </label>
-          <small className="dica">
-            Mesmo marcando “disponível”, você fica oculto nas buscas durante o período de
-            carência (60 dias homens / 90 dias mulheres) após a última doação.
-          </small>
-        </div>
-      </div>
+          </div>
+        )}
+      </fieldset>
 
-      {erro && <p className="alerta-erro" role="alert">{erro}</p>}
+      <fieldset>
+        <legend>Disponibilidade</legend>
+        <label className="caixa">
+          <input
+            type="checkbox"
+            checked={valores.disponivel}
+            onChange={(e) => atualizar({ disponivel: e.target.checked })}
+          />
+          <span>Estou disponível para doar</span>
+        </label>
+        <p className="dica">
+          Mesmo disponível, você fica fora das buscas durante o intervalo entre doações: 60 dias para
+          homens e 90 dias para mulheres.
+        </p>
+      </fieldset>
 
-      <div className="acoes-form">
-        <button className="btn btn-primario" type="submit" disabled={enviando}>
-          {enviando ? 'Salvando…' : modo === 'editar' ? 'Salvar alterações' : 'Cadastrar como doador'}
-        </button>
-      </div>
+      <div ref={areaErro}>{erro && <Aviso aviso={{ tipo: 'erro', texto: erro }} />}</div>
+
+      <button className="btn btn-grande" type="submit" disabled={enviando}>
+        {enviando ? 'Salvando…' : modo === 'editar' ? 'Salvar alterações' : 'Cadastrar como doador'}
+      </button>
     </form>
   );
 }

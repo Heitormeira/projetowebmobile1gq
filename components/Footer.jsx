@@ -1,15 +1,14 @@
 export default function Footer() {
   return (
-    <footer className="site-footer">
-      <div className="container footer-inner">
+    <footer className="rodape">
+      <div className="container">
         <p>
-          <strong>Sangue Solidário</strong> — plataforma colaborativa que conecta
-          receptores a doadores compatíveis.
+          <strong>Sangue Solidário</strong> — trabalho acadêmico que aproxima quem precisa de sangue
+          de quem quer doar.
         </p>
-        <p className="footer-aviso">
-          A plataforma apenas facilita o contato: doação de sangue deve sempre ser
-          realizada em hemocentros e bancos de sangue credenciados. Não intermedeamos
-          comunicação nem armazenamos histórico médico.
+        <p>
+          O site só facilita o contato entre as pessoas. A doação de sangue deve sempre acontecer em
+          hemocentros e bancos de sangue credenciados. Não guardamos histórico médico.
         </p>
       </div>
     </footer>

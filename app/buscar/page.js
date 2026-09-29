@@ -7,6 +7,7 @@ import { mascararCep } from '@/lib/formatar';
 import DoadorCard from '@/components/DoadorCard';
 import SeletorTipo from '@/components/SeletorTipo';
 import Aviso from '@/components/Aviso';
+import Hemocentros from '@/components/Hemocentros';
 
 export default function BuscarDoadores() {
   const [tipoReceptor, setTipoReceptor] = useState('');
@@ -15,6 +16,10 @@ export default function BuscarDoadores() {
   const [resultados, setResultados] = useState(null); // null = ainda não buscou
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
+  const [coords, setCoords] = useState(null); // { lat, lng } do aparelho
+  const [statusLocal, setStatusLocal] = useState({ tipo: '', texto: '' });
+  const [buscandoLocal, setBuscandoLocal] = useState(false);
+  const [origemBusca, setOrigemBusca] = useState(null); // origem usada na última busca
   const tituloResultados = useRef(null);
 
   // Depois da busca, leva a pessoa direto ao resultado (a tela do celular é comprida).
@@ -27,6 +32,38 @@ export default function BuscarDoadores() {
     const menosMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     titulo.scrollIntoView({ behavior: menosMovimento ? 'auto' : 'smooth', block: 'start' });
   }, [resultados]);
+
+  function usarMinhaLocalizacao() {
+    if (!navigator.geolocation) {
+      setStatusLocal({ tipo: 'erro', texto: 'Este aparelho não consegue informar a localização. Digite o CEP.' });
+      return;
+    }
+    setBuscandoLocal(true);
+    setStatusLocal({ tipo: '', texto: 'Procurando onde você está…' });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setStatusLocal({ tipo: 'ok', texto: 'Localização encontrada. Agora é só buscar.' });
+        setBuscandoLocal(false);
+      },
+      (falha) => {
+        const negou = falha.code === 1;
+        setStatusLocal({
+          tipo: 'erro',
+          texto: negou
+            ? 'Você não permitiu a localização. Sem problema: digite o seu CEP.'
+            : 'Não deu para descobrir onde você está. Digite o seu CEP.',
+        });
+        setBuscandoLocal(false);
+      },
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+    );
+  }
+
+  function naoUsarLocalizacao() {
+    setCoords(null);
+    setStatusLocal({ tipo: '', texto: '' });
+  }
 
   async function buscar(evento) {
     evento.preventDefault();
@@ -42,8 +79,15 @@ export default function BuscarDoadores() {
       const parametros = new URLSearchParams();
       parametros.set('tipoReceptor', tipoReceptor);
       if (cidade.trim()) parametros.set('cidade', cidade.trim());
-      if (cepOrigem.replace(/\D/g, '').length === 8) {
-        parametros.set('cepOrigem', cepOrigem.replace(/\D/g, ''));
+      const cepDigitos = cepOrigem.replace(/\D/g, '');
+      let origem = null;
+      if (coords) {
+        parametros.set('lat', String(coords.lat));
+        parametros.set('lng', String(coords.lng));
+        origem = { lat: coords.lat, lng: coords.lng };
+      } else if (cepDigitos.length === 8) {
+        parametros.set('cepOrigem', cepDigitos);
+        origem = { cep: cepDigitos };
       }
       parametros.set('apenasDisponiveis', 'true');
 
@@ -51,6 +95,7 @@ export default function BuscarDoadores() {
       const dados = await resposta.json();
       if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível buscar agora. Tente de novo.');
 
+      setOrigemBusca(origem);
       setResultados(dados.doadores);
     } catch (e) {
       setErro(e.message);
@@ -116,6 +161,26 @@ export default function BuscarDoadores() {
               <p className="dica">Com o CEP, os doadores aparecem do mais perto ao mais longe.</p>
             </div>
           </div>
+
+          <div className="local-gps">
+            {coords ? (
+              <button type="button" className="btn btn-neutro" onClick={naoUsarLocalizacao}>
+                Não usar minha localização
+              </button>
+            ) : (
+              <button type="button" className="btn btn-neutro" onClick={usarMinhaLocalizacao} disabled={buscandoLocal}>
+                {buscandoLocal ? 'Procurando…' : 'Usar minha localização'}
+              </button>
+            )}
+            {statusLocal.texto && (
+              <p
+                className={`status-cep ${statusLocal.tipo}`}
+                role={statusLocal.tipo === 'erro' ? 'alert' : 'status'}
+              >
+                {statusLocal.texto}
+              </p>
+            )}
+          </div>
         </fieldset>
 
         {erro && <Aviso aviso={{ tipo: 'erro', texto: erro }} />}
@@ -177,6 +242,8 @@ export default function BuscarDoadores() {
               ))}
             </div>
           )}
+
+          <Hemocentros origem={origemBusca} />
         </section>
       )}
     </div>

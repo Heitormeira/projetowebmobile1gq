@@ -137,8 +137,16 @@ export async function GET(requisicao) {
 
     // Geolocalização: com CEP de origem, calcula a distância real (Haversine)
     // até cada doador e ordena os mais próximos primeiro.
-    if (cepOrigem.length === 8) {
-      const origem = await geocodificarCep(cepOrigem);
+    // A origem pode vir do GPS do navegador (lat/lng) ou do CEP.
+    const latOrigem = parseFloat(searchParams.get('lat'));
+    const lngOrigem = parseFloat(searchParams.get('lng'));
+    const temGps =
+      Number.isFinite(latOrigem) && Number.isFinite(lngOrigem) && Math.abs(latOrigem) <= 90 && Math.abs(lngOrigem) <= 180;
+
+    if (temGps || cepOrigem.length === 8) {
+      const origem = temGps
+        ? { latitude: latOrigem, longitude: lngOrigem }
+        : await geocodificarCep(cepOrigem);
       if (origem) {
         doadores = doadores
           .map((d) => ({

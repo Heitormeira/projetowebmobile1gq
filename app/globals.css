@@ -725,6 +725,21 @@ input[type='radio'] {
   scroll-margin-top: 1rem;
 }
 
+.local-gps {
+  margin-top: 1rem;
+}
+
+.local-gps .btn {
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .local-gps .btn {
+    width: auto;
+    min-width: 15rem;
+  }
+}
+
 .lista-doadores {
   display: grid;
   gap: 1.2rem;
@@ -735,6 +750,10 @@ input[type='radio'] {
   border: 2px solid var(--linha-forte);
   border-radius: var(--raio);
   background: var(--fundo);
+}
+
+.doador > .doador-nome {
+  margin: 0 0 0.8rem;
 }
 
 .doador-topo {

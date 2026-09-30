@@ -36,7 +36,7 @@ const DOADORES_EXEMPLO = [
     cidade: 'Recife',
     bairro: 'Boa Viagem',
     uf: 'PE',
-    telefoneContato: '81999990001',
+    email: 'maria.silva@exemplo.com',
     ultimaDoacao: null, // nunca doou → disponível imediatamente
     disponivel: true,
   },
@@ -48,7 +48,7 @@ const DOADORES_EXEMPLO = [
     cidade: 'São Paulo',
     bairro: 'Centro',
     uf: 'SP',
-    telefoneContato: '11999990002',
+    email: 'joao.pereira@exemplo.com',
     ultimaDoacao: new Date('2026-01-10'), // homem + 60 dias → disponível
     disponivel: true,
   },
@@ -60,7 +60,7 @@ const DOADORES_EXEMPLO = [
     cidade: 'Rio de Janeiro',
     bairro: 'Centro',
     uf: 'RJ',
-    telefoneContato: '21999990003',
+    email: 'ana.souza@exemplo.com',
     ultimaDoacao: new Date(), // doou hoje → indisponível pela carência
     disponivel: true,
   },
@@ -72,7 +72,7 @@ const DOADORES_EXEMPLO = [
     cidade: 'Belo Horizonte',
     bairro: 'Centro',
     uf: 'MG',
-    telefoneContato: '31999990004',
+    email: 'carlos.lima@exemplo.com',
     ultimaDoacao: null,
     disponivel: false, // marcado manualmente como indisponível
   },
@@ -84,7 +84,7 @@ const DOADORES_EXEMPLO = [
     cidade: 'Curitiba',
     bairro: 'Centro',
     uf: 'PR',
-    telefoneContato: '41999990005',
+    email: 'fernanda.costa@exemplo.com',
     ultimaDoacao: null,
     disponivel: true,
   },
@@ -103,12 +103,11 @@ async function main() {
     obj.set('cidade', dados.cidade);
     obj.set('bairro', dados.bairro);
     obj.set('uf', dados.uf);
-    obj.set('telefoneContato', dados.telefoneContato);
-    obj.set('telefoneDigits', String(dados.telefoneContato).replace(/\D/g, ''));
+    obj.set('email', dados.email);
     obj.set('disponivel', dados.disponivel);
     obj.set('ultimaDoacao', dados.ultimaDoacao ?? null);
 
-    // Geocodifica o CEP (Nominatim) para habilitar distância/mapa nas buscas.
+    // Geocodifica o CEP (Nominatim) para calcular a distância nas buscas (as coordenadas nunca são mostradas).
     try {
       const ponto = await geocodificarCep(dados.cep);
       if (ponto) {

@@ -14,9 +14,10 @@
  *     c) aplica filtro de localização (cidade/bairro).
  */
 import { NextResponse } from 'next/server';
-import Parse, { CLASSE_DOADOR, parseParaObjeto } from '@/lib/back4app-server';
+import Parse, { CLASSE_DOADOR, parseParaObjeto, coordenadasDe } from '@/lib/back4app-server';
 import { TIPOS_SANGUINEOS, tiposCompativeisCom, doadorDisponivel } from '@/lib/regras';
 import { cepEhValido, consultarCep } from '@/lib/viacep';
+import { emailEhValido, normalizarEmail } from '@/lib/formatar';
 import { geocodificarCep, distanciaKm } from '@/lib/geolocalizacao';
 
 // ---------------------------------------------------------------- CREATE
@@ -35,9 +36,9 @@ export async function POST(requisicao) {
       return NextResponse.json({ erro: 'Tipo sanguíneo inválido.' }, { status: 400 });
     }
 
-    const telefoneContato = String(corpo.telefoneContato || '').trim();
-    if (telefoneContato.replace(/\D/g, '').length < 10) {
-      return NextResponse.json({ erro: 'Informe um telefone válido com DDD.' }, { status: 400 });
+    const email = normalizarEmail(corpo.email);
+    if (!emailEhValido(email)) {
+      return NextResponse.json({ erro: 'Informe um e-mail válido. Exemplo: nome@exemplo.com' }, { status: 400 });
     }
 
     const cep = String(corpo.cep || '').trim();
@@ -61,8 +62,7 @@ export async function POST(requisicao) {
     doador.set('cidade', endereco.cidade);
     doador.set('bairro', String(corpo.bairro || '').trim() || endereco.bairro);
     doador.set('uf', endereco.uf);
-    doador.set('telefoneContato', telefoneContato);
-    doador.set('telefoneDigits', telefoneContato.replace(/\D/g, '')); // índice p/ "Meu cadastro"
+    doador.set('email', email); // contato e chave do "Meu cadastro"
     doador.set('disponivel', corpo.disponivel !== false); // padrão: true
     doador.set('ultimaDoacao', corpo.ultimaDoacao ? new Date(corpo.ultimaDoacao) : null);
 
@@ -123,7 +123,13 @@ export async function GET(requisicao) {
     if (cidade) query.equalTo('cidade', cidade);
 
     const resultados = await query.find();
-    let doadores = resultados.map(parseParaObjeto);
+
+    // O e-mail só sai na busca de quem precisa de sangue; a lista geral não o mostra.
+    // Coordenadas ficam só no servidor (em _coordenadas) e são apagadas antes da resposta.
+    let doadores = resultados.map((r) => ({
+      ...parseParaObjeto(r, { email: modoBusca }),
+      _coordenadas: coordenadasDe(r),
+    }));
 
     // Carência entre doações: 60 dias (homens) / 90 dias (mulheres).
     // O doador não aparece como disponível mesmo que o campo manual seja true.
@@ -148,13 +154,19 @@ export async function GET(requisicao) {
         ? { latitude: latOrigem, longitude: lngOrigem }
         : await geocodificarCep(cepOrigem);
       if (origem) {
+        // Distância arredondada em km inteiros: com casa decimal, várias buscas
+        // de pontos diferentes permitiriam descobrir onde a pessoa mora.
         doadores = doadores
           .map((d) => ({
             ...d,
-            distanciaKm:
-              d.latitude != null && d.longitude != null
-                ? Math.round(distanciaKm(origem.latitude, origem.longitude, d.latitude, d.longitude) * 10) / 10
-                : null,
+            distanciaKm: d._coordenadas
+              ? Math.max(
+                  1,
+                  Math.round(
+                    distanciaKm(origem.latitude, origem.longitude, d._coordenadas.latitude, d._coordenadas.longitude)
+                  )
+                )
+              : null,
           }))
           .sort((a, b) => {
             if (a.distanciaKm == null && b.distanciaKm == null) return 0;
@@ -165,7 +177,10 @@ export async function GET(requisicao) {
       }
     }
 
-    return NextResponse.json({ ok: true, doadores });
+    return NextResponse.json({
+      ok: true,
+      doadores: doadores.map(({ _coordenadas, ...publico }) => publico),
+    });
   } catch (erro) {
     console.error('[API /doadores GET]', erro);
     return NextResponse.json(

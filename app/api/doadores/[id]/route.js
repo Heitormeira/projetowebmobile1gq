@@ -10,6 +10,7 @@ import Parse, { CLASSE_DOADOR, parseParaObjeto } from '@/lib/back4app-server';
 import { TIPOS_SANGUINEOS } from '@/lib/regras';
 import { cepEhValido, consultarCep } from '@/lib/viacep';
 import { geocodificarCep } from '@/lib/geolocalizacao';
+import { emailEhValido, normalizarEmail } from '@/lib/formatar';
 
 export async function PUT(requisicao, { params }) {
   try {
@@ -44,13 +45,12 @@ export async function PUT(requisicao, { params }) {
     }
 
     if (corpo.sexo !== undefined) doador.set('sexo', String(corpo.sexo).toLowerCase());
-    if (corpo.telefoneContato !== undefined) {
-      const tel = String(corpo.telefoneContato).trim();
-      if (tel.replace(/\D/g, '').length < 10) {
-        return NextResponse.json({ erro: 'Telefone inválido — informe DDD + número.' }, { status: 400 });
+    if (corpo.email !== undefined) {
+      const email = normalizarEmail(corpo.email);
+      if (!emailEhValido(email)) {
+        return NextResponse.json({ erro: 'Informe um e-mail válido. Exemplo: nome@exemplo.com' }, { status: 400 });
       }
-      doador.set('telefoneContato', tel);
-      doador.set('telefoneDigits', tel.replace(/\D/g, ''));
+      doador.set('email', email);
     }
     if (corpo.bairro !== undefined) doador.set('bairro', String(corpo.bairro).trim());
     if (corpo.disponivel !== undefined) doador.set('disponivel', corpo.disponivel === true);
@@ -86,7 +86,7 @@ export async function PUT(requisicao, { params }) {
     }
 
     await doador.save();
-    return NextResponse.json({ ok: true, doador: parseParaObjeto(doador) });
+    return NextResponse.json({ ok: true, doador: parseParaObjeto(doador, { email: true, cep: true }) });
   } catch (erro) {
     console.error('[API /doadores/:id PUT]', erro);
     return NextResponse.json(
@@ -101,7 +101,8 @@ export async function GET(requisicao, { params }) {
   try {
     const { id } = await params;
     const doador = await new Parse.Query(CLASSE_DOADOR).get(id);
-    return NextResponse.json({ ok: true, doador: parseParaObjeto(doador) });
+    // Aqui é o próprio doador editando: pode ver o CEP e o e-mail que cadastrou.
+    return NextResponse.json({ ok: true, doador: parseParaObjeto(doador, { email: true, cep: true }) });
   } catch (erro) {
     // Código 101 do Parse = objeto não encontrado.
     if (erro.code === 101) {

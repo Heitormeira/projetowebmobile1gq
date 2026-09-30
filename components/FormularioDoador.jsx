@@ -5,7 +5,6 @@ import Link from 'next/link';
 import SeletorTipo from './SeletorTipo';
 import CampoCep from './CampoCep';
 import Aviso from './Aviso';
-import { mascararTelefone, removerDdi } from '@/lib/formatar';
 
 const vaziosIniciais = {
   nome: '',
@@ -13,7 +12,7 @@ const vaziosIniciais = {
   sexo: '',
   cep: '',
   bairro: '',
-  telefoneContato: '',
+  email: '',
   ultimaDoacao: '',
   disponivel: true,
 };
@@ -32,9 +31,7 @@ const OPCOES_SEXO = [
  */
 export default function FormularioDoador({ modo = 'criar', doadorInicial = null, idDoador = null }) {
   const [valores, setValores] = useState(() =>
-    doadorInicial
-      ? { ...vaziosIniciais, ...doadorInicial, telefoneContato: mascararTelefone(removerDdi(doadorInicial.telefoneContato)) }
-      : vaziosIniciais
+    doadorInicial ? { ...vaziosIniciais, ...doadorInicial, email: doadorInicial.email || '' } : vaziosIniciais
   );
   const [nuncaDoou, setNuncaDoou] = useState(() => !(doadorInicial && doadorInicial.ultimaDoacao));
   const [hoje, setHoje] = useState('');
@@ -92,7 +89,7 @@ export default function FormularioDoador({ modo = 'criar', doadorInicial = null,
           sexo: valores.sexo,
           cep: valores.cep,
           bairro: valores.bairro,
-          telefoneContato: valores.telefoneContato,
+          email: valores.email.trim(),
           ultimaDoacao: nuncaDoou ? null : valores.ultimaDoacao,
           disponivel: valores.disponivel,
         }),
@@ -115,7 +112,7 @@ export default function FormularioDoador({ modo = 'criar', doadorInicial = null,
         <p>
           {modo === 'editar'
             ? 'As mudanças já estão salvas.'
-            : 'Obrigado por se colocar à disposição. Se precisar mudar algo depois, use “Meu cadastro” com o seu telefone.'}
+            : 'Obrigado por se colocar à disposição. Se precisar mudar algo depois, use “Meu cadastro” com o seu e-mail.'}
         </p>
         <div className="botoes">
           {modo === 'editar' ? (
@@ -195,19 +192,23 @@ export default function FormularioDoador({ modo = 'criar', doadorInicial = null,
       </div>
 
       <div className="campo">
-        <label htmlFor="telefoneContato">Telefone com DDD (de preferência WhatsApp)</label>
+        <label htmlFor="email">E-mail</label>
         <input
-          id="telefoneContato"
-          name="telefoneContato"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel-national"
-          value={valores.telefoneContato}
-          onChange={(e) => atualizar({ telefoneContato: mascararTelefone(e.target.value) })}
-          placeholder="(81) 99999-9999"
+          id="email"
+          name="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          value={valores.email}
+          onChange={(e) => atualizar({ email: e.target.value })}
+          placeholder="nome@exemplo.com"
           required
         />
-        <p className="dica">Só aparece para quem está procurando um doador compatível.</p>
+        <p className="dica">
+          É o único contato que aparece, e só para quem está procurando um doador compatível. Seu
+          endereço e seu telefone nunca são mostrados.
+        </p>
       </div>
 
       <fieldset>

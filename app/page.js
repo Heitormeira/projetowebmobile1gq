@@ -25,7 +25,7 @@ export default function Home() {
         <ol className="passos">
           <li>Escolha o tipo sanguíneo de quem vai receber o sangue.</li>
           <li>Veja a lista de pessoas que podem doar.</li>
-          <li>Chame a pessoa pelo WhatsApp ou ligue para ela.</li>
+          <li>Envie um e-mail para a pessoa pedindo ajuda.</li>
         </ol>
       </section>
 
@@ -37,6 +37,10 @@ export default function Home() {
             dias para mulheres.
           </li>
           <li>Nem todo tipo sanguíneo pode doar para todos os outros. O site já faz essa conta para você.</li>
+          <li>
+            Sua privacidade é protegida: só aparecem o seu bairro e o seu e-mail. Rua, CEP e telefone
+            nunca são mostrados.
+          </li>
           <li>
             O site só aproxima as pessoas. A doação deve ser feita em hemocentros e bancos de sangue
             credenciados.

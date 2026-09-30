@@ -373,7 +373,8 @@ a {
 }
 
 .acoes .btn {
-  flex: 1 1 11rem;
+  flex: 1 1 min(11rem, 100%);
+  min-width: 0;
 }
 
 /* O botão principal (WhatsApp) ocupa a linha inteira, para o texto não quebrar. */
@@ -742,6 +743,7 @@ input[type='radio'] {
 
 .lista-doadores {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.2rem;
 }
 
@@ -802,9 +804,10 @@ input[type='radio'] {
   font-size: 1.05rem;
 }
 
-.dados .telefone {
-  font-size: 1.35rem;
+.dados .email {
+  font-size: 1.15rem;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .situacao-ok {
@@ -918,7 +921,7 @@ input[type='radio'] {
   }
 
   .lista-doadores {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

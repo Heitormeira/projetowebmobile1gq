@@ -23,7 +23,7 @@ export default function CampoCep({ value, onChange }) {
 
     let cancelado = false;
     setStatus('buscando');
-    setMensagem('Procurando o endereço…');
+    setMensagem('Procurando o bairro…');
 
     fetch(`/api/cep?cep=${digitos}`)
       .then((r) => r.json())
@@ -31,7 +31,7 @@ export default function CampoCep({ value, onChange }) {
         if (cancelado) return;
         if (dados.ok) {
           setStatus('ok');
-          setMensagem(`Endereço encontrado: ${dados.cidade}/${dados.uf}${dados.bairro ? ` — ${dados.bairro}` : ''}`);
+          setMensagem(`Encontramos: ${dados.cidade}/${dados.uf}${dados.bairro ? ` — ${dados.bairro}` : ''}`);
           onChange({ cidade: dados.cidade, bairro: dados.bairro, uf: dados.uf });
         } else {
           setStatus('erro');
@@ -64,7 +64,7 @@ export default function CampoCep({ value, onChange }) {
         onChange={(e) => onChange({ cep: mascararCep(e.target.value) })}
         required
       />
-      <p className="dica">A cidade e o bairro são preenchidos sozinhos.</p>
+      <p className="dica">Usamos o CEP só para achar o seu bairro. Ele não aparece para ninguém.</p>
       {status && (
         <p className={`status-cep ${status === 'ok' ? 'ok' : status === 'erro' ? 'erro' : ''}`} aria-live="polite">
           {mensagem}

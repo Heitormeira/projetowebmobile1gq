@@ -106,7 +106,6 @@ export default function BuscarDoadores() {
   }
 
   const compativeis = tipoReceptor ? tiposCompativeisCom(tipoReceptor) : null;
-  const maisProximo = resultados && resultados.length > 0 ? resultados[0] : null;
   const temDistancias = resultados?.some((d) => d.distanciaKm != null);
   const total = resultados ? resultados.length : 0;
 
@@ -200,29 +199,8 @@ export default function BuscarDoadores() {
           </h2>
           {total > 0 && temDistancias && (
             <p className="dica" style={{ marginBottom: '1rem' }}>
-              Ordenados do mais perto ao mais longe do seu CEP.
+              Ordenados do mais perto ao mais longe de onde você está.
             </p>
-          )}
-
-          {maisProximo && maisProximo.latitude != null && (
-            <div className="mapa">
-              <h3>
-                Doador mais próximo
-                {maisProximo.distanciaKm != null
-                  ? `: cerca de ${String(maisProximo.distanciaKm).replace('.', ',')} km`
-                  : ''}
-              </h3>
-              <iframe
-                title="Mapa do doador mais próximo (OpenStreetMap)"
-                className="mapa-embed"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${
-                  maisProximo.longitude - 0.02
-                }%2C${maisProximo.latitude - 0.02}%2C${maisProximo.longitude + 0.02}%2C${
-                  maisProximo.latitude + 0.02
-                }&layer=mapnik&marker=${maisProximo.latitude}%2C${maisProximo.longitude}`}
-                loading="lazy"
-              />
-            </div>
           )}
 
           {total === 0 ? (

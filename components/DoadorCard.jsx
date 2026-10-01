@@ -111,9 +111,11 @@ export default function DoadorCard({
             <>
               <a
                 className="btn btn-verde"
-                href={`mailto:${doador.email}?subject=${encodeURIComponent(ASSUNTO_EMAIL)}&body=${encodeURIComponent(MENSAGEM_EMAIL)}`}
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(doador.email)}&su=${encodeURIComponent(ASSUNTO_EMAIL)}&body=${encodeURIComponent(MENSAGEM_EMAIL)}`}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                Enviar e-mail
+                Enviar e-mail pelo Gmail
               </a>
               <button type="button" className="btn btn-neutro" onClick={copiarEmail}>
                 {copiado ? 'E-mail copiado!' : 'Copiar e-mail'}

@@ -1,160 +1,144 @@
-# 🩸 Sangue Solidário
+# Sangue Solidário
 
-Plataforma web colaborativa que conecta **receptores de sangue** a **doadores
-cadastrados** que sejam sanguineamente compatíveis e estejam disponíveis,
-com informações de localização para facilitar o contato direto.
+Site que ajuda quem precisa de sangue a encontrar doadores compatíveis e disponíveis
+perto de si. Trabalho da disciplina de Programação Web Mobile, com o tema "Banco de
+Doação de Sangue Colaborativo".
 
-## 👥 Integrantes
+O site só aproxima as pessoas. A doação deve ser feita em hemocentros e bancos de
+sangue credenciados.
 
-| Nome | RA | Parte implementada |
-|------|----|--------------------|
-| *NOME DO INTEGRANTE 1* | *RA 1* | Back-end (API Node/rotas + regras de negócio) |
-| *NOME DO INTEGRANTE 2* | *RA 2* | CRUD completo integrado ao Back4App (Create/Read/Update/Delete) |
-| *NOME DO INTEGRANTE 3* | *RA 3* | Front-end — telas de busca e listagem (React) |
-| *NOME DO INTEGRANTE 4* | *RA 4* | Front-end — cadastro/edição + componentes React |
-| *NOME DO INTEGRANTE 5* | *RA 5* | CSS e design (CSS puro) + integração ViaCEP |
+## Integrantes
 
-> **Edite esta tabela** com os dados reais do grupo — o README deve conter
-> nome e RA de todos os integrantes.
+| Nome | RA |
+|------|----|
+| Heitor Meira | 852542 |
+| Marcelo Caldas | 852309 |
+| João da Fonte | 852060 |
 
-## 🛠 Stack técnica
+## Tecnologias
 
-- **Front-end:** React 19 + Next.js 15 (App Router) — requisito obrigatório
-- **Estilização:** CSS puro (sem frameworks), arquivo `app/globals.css`
-- **Back-end / persistência:** Back4App (Parse Server), acessado por rotas
-  de API Node do Next (`app/api/**`)
-- **APIs externas:** [ViaCEP](https://viacep.com.br/) — preenche cidade/bairro/UF
-  a partir do CEP · [Nominatim/OpenStreetMap](https://nominatim.org/) — coordenadas,
-  distância (Haversine) e mapa
-- **Deploy:** Vercel (front + rotas API) e Back4App (banco)
-- **Versionamento:** GitHub
+- Front end: React 19 e Next.js 15 (App Router)
+- Estilo: CSS puro, em `app/globals.css`
+- Back end: rotas de API em Node dentro do Next (`app/api/**`)
+- Banco de dados: Back4App (Parse Server), classe `Doador`
+- APIs externas: ViaCEP, Nominatim e Overpass (ambos do OpenStreetMap)
+- Publicação: Vercel (site e rotas de API) e GitHub (código)
 
-## 🚀 Como rodar localmente
+## Como rodar no computador
 
-1. **Criar o app no Back4App** (gratuito): [https://www.back4app.com/](https://www.back4app.com/)
-2. Copiar as chaves em *Dashboard → App Settings → Security & Encryption*:
-   - Application ID
-   - JavaScript Key
-3. Criar o arquivo `.env.local` na raiz (copie de `.env.example`):
+1. Crie um app no [Back4App](https://www.back4app.com/) e copie o Application ID e a
+   JavaScript Key (App Settings, Security & Encryption).
+2. Crie o arquivo `.env.local` a partir do `.env.example` e preencha:
 
-   ```bash
-   cp .env.example .env.local
-   # cole suas chaves dentro do arquivo
+   ```
+   NEXT_PUBLIC_BACK4APP_APP_ID=...
+   NEXT_PUBLIC_BACK4APP_JAVASCRIPT_KEY=...
+   ADMIN_SENHA=uma-senha-so-de-voces
    ```
 
-4. Instalar dependências e rodar o seed (popula a classe `Doador`):
+3. Instale e rode:
 
-   ```bash
+   ```
    npm install
-   npm run seed
-   ```
-
-5. Iniciar o servidor de desenvolvimento:
-
-   ```bash
    npm run dev
    ```
 
-6. Abrir [http://localhost:3000](http://localhost:3000).
+4. Abra http://localhost:3000.
 
-## 🧪 Verificar as regras de negócio
+Para criar alguns doadores de exemplo no Back4App: `npm run seed`.
 
-```bash
-npm run verificar-ambiente
-```
+No Vercel, cadastre as mesmas três variáveis em Settings, Environment Variables.
 
-Valida a tabela de compatibilidade (8 tipos) e a carência entre doações
-(60 dias homens / 90 dias mulheres), sem precisar de rede.
+## Páginas
 
-## 📄 Páginas
-
-| Rota | Descrição |
+| Rota | O que faz |
 |------|-----------|
-| `/` | Landing page com explicação e tabela de compatibilidade |
-| `/buscar` | Busca por doadores compatíveis e disponíveis, com distância e mapa |
-| `/cadastro` | Cadastro de novo doador (**CREATE**) |
-| `/doadores` | Listagem geral de doadores (**READ**) com filtros |
-| `/doadores/[id]/editar` | Edição (**UPDATE**) e exclusão (**DELETE**) |
-| `/meu-cadastro` | Doador encontra o próprio cadastro pelo telefone |
+| `/` | Explica como o site funciona e mostra a tabela de compatibilidade |
+| `/buscar` | Quem precisa de sangue escolhe o tipo e vê os doadores compatíveis, mais os hemocentros próximos |
+| `/cadastro` | Cadastro de doador |
+| `/doadores` | Lista de doadores, com filtros |
+| `/meu-cadastro` | O doador acha o próprio cadastro pelo e-mail e pode editá-lo |
+| `/doadores/[id]/editar` | Edição de um cadastro |
+| `/admin` | Entrada do administrador |
 
-## 🔌 API (rotas Node)
+## CRUD
 
-| Método | Rota | Operação |
-|--------|------|----------|
-| `POST` | `/api/doadores` | CREATE — valida dados, consulta ViaCEP e salva no Back4App |
-| `GET` | `/api/doadores?tipoReceptor=A%2B&cidade=Recife&bairro=Boa%20Viagem&apenasDisponiveis=true` | READ — lista com filtros de compatibilidade/carência/localização |
-| `GET` | `/api/doadores` | READ — lista completa |
-| `PUT` | `/api/doadores/[id]` | UPDATE — edição dos dados do doador |
-| `DELETE` | `/api/doadores/[id]` | DELETE — remove o cadastro |
-| `GET` | `/api/cep?cep=50000000` | Proxy para a API externa ViaCEP |
-| `GET` | `/api/meu-cadastro?telefone=81999990001` | Localiza o cadastro pelo telefone |
+| Operação | Rota | Quem pode |
+|----------|------|-----------|
+| Criar | `POST /api/doadores` | Qualquer pessoa |
+| Ler | `GET /api/doadores` | Qualquer pessoa (a lista pública não mostra contato) |
+| Atualizar | `PUT /api/doadores/[id]` | O dono, com o e-mail do cadastro, ou o administrador |
+| Excluir | `DELETE /api/doadores/[id]` | Só o administrador |
 
-## 🧬 Regras de negócio
+Outras rotas:
 
-### Compatibilidade sanguínea (estrutura fixa no código)
+- `GET /api/doadores?tipoReceptor=A%2B&cidade=Recife&lat=..&lng=..`: busca para quem precisa de sangue
+- `GET /api/meu-cadastro?email=...`: acha o cadastro pelo e-mail
+- `GET /api/cep?cep=50030230`: consulta o ViaCEP
+- `GET /api/hemocentros?lat=..&lng=..` ou `?cep=...`: hemocentros próximos
+- `GET`, `POST` e `DELETE /api/admin`: ver, abrir e encerrar a sessão de administrador
 
-Do ponto de vista do **receptor** — quem precisa receber:
+## Regras do sistema
+
+**Compatibilidade.** A busca usa uma tabela fixa, em `lib/regras.js`:
 
 | Receptor | Pode receber de |
 |----------|-----------------|
-| O− | O− |
-| O+ | O−, O+ |
-| A− | O−, A− |
-| A+ | O−, O+, A−, A+ |
-| B− | O−, B− |
-| B+ | O−, O+, B−, B+ |
-| AB− | O−, A−, B−, AB− |
-| AB+ | Todos (receptor universal) |
+| O- | O- |
+| O+ | O-, O+ |
+| A- | O-, A- |
+| A+ | O-, O+, A-, A+ |
+| B- | O-, B- |
+| B+ | O-, O+, B-, B+ |
+| AB- | O-, A-, B-, AB- |
+| AB+ | todos |
 
-Implementada em `lib/regras.js` como objeto fixo (`COMPATIBILIDADE_RECEPTOR`) —
-não depende de API externa nem de cálculo dinâmico.
+**Carência.** Depois de doar, o doador some da busca por 60 dias (homens) ou 90 dias
+(mulheres e sexo não informado). A conta é feita no servidor, mesmo que ele continue
+marcado como disponível.
 
-### Período de carência entre doações
+## Privacidade
 
-- **Homens:** intervalo mínimo de **60 dias** entre doações
-- **Mulheres:** intervalo mínimo de **90 dias** entre doações
-- Sem sexo informado: aplica-se o padrão de **90 dias**
+- O site mostra só o bairro e a cidade. Rua, CEP e coordenadas nunca saem do servidor.
+- O CEP serve para achar o bairro e calcular a distância.
+- O único contato é o e-mail, e ele só aparece na busca de quem precisa de sangue.
+- A distância é mostrada em km inteiros, para não revelar onde a pessoa mora.
+- Não há mapa com a posição dos doadores.
 
-A verificação é feita **no servidor**: o doador que doou dentro do período de
-carência não aparece nas buscas, mesmo que tenha marcado "disponível" manualmente.
+## Hemocentros e localização
 
-## 🗃 Entidade Doador (classe no Back4App)
+Na busca, o botão "Usar minha localização" pega a posição do aparelho. Sem ele, o
+usuário pode digitar o CEP. Com a origem, o site lista até 5 hemocentros num raio de
+30 km, consultando o Overpass (OpenStreetMap). Se ele falhar, tenta o Nominatim. Se
+nenhum responder, a tela avisa em vez de mostrar dados inventados. Os dados vêm da
+comunidade do OpenStreetMap, então a cobertura varia por cidade e é bom confirmar o
+horário por telefone.
 
-| Campo | Tipo | Observação |
-|-------|------|------------|
-| `nome` | String | obrigatório |
-| `tipoSanguineo` | String | um de O−, O+, A−, A+, B−, B+, AB−, AB+ |
-| `sexo` | String | `masculino` / `feminino` (usado na carência) |
-| `cep` | String | consultado na API ViaCEP |
-| `cidade` | String | preenchida pelo ViaCEP |
-| `bairro` | String | opcional (sugerido pelo ViaCEP) |
-| `uf` | String | preenchido pelo ViaCEP |
-| `telefoneContato` | String | usado para contato/WhatsApp |
-| `ultimaDoacao` | Date | opcional — base do cálculo de carência |
-| `disponivel` | Boolean | padrão `true` no cadastro |
-| `dataCadastro` | Date | automático (`createdAt` do Parse) |
+## Administrador
 
-## ☁️ Deploy
+Só o administrador exclui cadastros. A senha fica na variável `ADMIN_SENHA` (nunca no
+código). Em `/admin` ele digita a senha e a sessão vale 8 horas, guardada em um cookie
+que o JavaScript do navegador não consegue ler. Sem `ADMIN_SENHA` definida, ninguém
+entra.
 
-- **Back4App:** o banco já roda no Parse Server do Back4App — basta criar o app
-  e configurar as chaves.
-- **Vercel:** importe o repositório no GitHub e configure as variáveis de
-  ambiente `NEXT_PUBLIC_BACK4APP_APP_ID` e `NEXT_PUBLIC_BACK4APP_JAVASCRIPT_KEY`
-  nas configurações do projeto.
+## Acessibilidade
 
-## 🗺️ Geolocalização (Nominatim + Haversine)
+O site foi pensado para pessoas idosas: fonte Atkinson Hyperlegible, três tamanhos de
+letra, modo de alto contraste, botões grandes e textos escritos em vez de ícones.
 
-Ao cadastrar, o CEP é geocodificado (lat/lng) via **Nominatim/OpenStreetMap** e
-salvo no Back4App. Na busca, o receptor pode informar o **CEP de origem**: o
-back-end calcula a **distância real (fórmula de Haversine)** até cada doador,
-ordena do mais próximo e exibe um **mapa OpenStreetMap** do primeiro resultado.
-Geocodificações são cacheadas em memória com rate limit de 1 req/s (política
-do Nominatim); falhas não bloqueiam cadastro nem busca.
+## Limitações
 
-## 🎥 Entregáveis do trabalho
+- Não há login de verdade: quem souber o e-mail de um doador consegue editar o cadastro dele.
+- A busca é pública e não tem limite de consultas.
+- O site não envia mensagens: o botão abre o aplicativo de e-mail de quem busca.
+- A distância é em linha reta, não por ruas.
 
-- **Vídeo (até 4 min):** visão geral da plataforma + demonstração do CRUD
-  completo (criar, listar/buscar, editar e excluir doador) integrado ao Back4App.
-  Roteiro pronto em [`docs/roteiro-video.md`](docs/roteiro-video.md).
-- **Slides:** o que foi implementado, o que **não** foi implementado e quem
-  implementou cada parte — estrutura pronta em [`docs/slides.md`](docs/slides.md).
+## Estrutura
+
+```
+app/          páginas e rotas de API
+components/   componentes React
+lib/          regras de negócio, Back4App, ViaCEP, geolocalização, hemocentros, admin
+scripts/      seed e verificação das regras
+docs/         roteiro do vídeo e rascunho dos slides
+```

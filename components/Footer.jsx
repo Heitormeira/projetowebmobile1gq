@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Footer() {
   return (
     <footer className="rodape">
@@ -9,6 +11,9 @@ export default function Footer() {
         <p>
           O site só facilita o contato entre as pessoas. A doação de sangue deve sempre acontecer em
           hemocentros e bancos de sangue credenciados. Não guardamos histórico médico.
+        </p>
+        <p>
+          <Link href="/admin">Área do administrador</Link>
         </p>
       </div>
     </footer>

@@ -29,7 +29,7 @@ const OPCOES_SEXO = [
  * - modo 'editar' → PUT    /api/doadores/[id]   (UPDATE)
  * Ao terminar, mostra uma tela de confirmação (em vez de um alert do navegador).
  */
-export default function FormularioDoador({ modo = 'criar', doadorInicial = null, idDoador = null }) {
+export default function FormularioDoador({ modo = 'criar', doadorInicial = null, idDoador = null, emailAcesso = '' }) {
   const [valores, setValores] = useState(() =>
     doadorInicial ? { ...vaziosIniciais, ...doadorInicial, email: doadorInicial.email || '' } : vaziosIniciais
   );
@@ -82,7 +82,7 @@ export default function FormularioDoador({ modo = 'criar', doadorInicial = null,
       const url = modo === 'editar' ? `/api/doadores/${idDoador}` : '/api/doadores';
       const resposta = await fetch(url, {
         method: modo === 'editar' ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(emailAcesso ? { 'x-email-acesso': emailAcesso } : {}) },
         body: JSON.stringify({
           nome: valores.nome.trim(),
           tipoSanguineo: valores.tipoSanguineo,

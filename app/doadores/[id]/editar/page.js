@@ -14,10 +14,21 @@ export default function EditarDoador() {
   const [confirmando, setConfirmando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [erroExclusao, setErroExclusao] = useState('');
+  const [admin, setAdmin] = useState(false);
+  const [emailAcesso, setEmailAcesso] = useState('');
 
   useEffect(() => {
     let ativo = true;
-    fetch(`/api/doadores/${id}`)
+    let acesso = '';
+    try {
+      acesso = sessionStorage.getItem('ss:acesso') || '';
+    } catch {}
+    setEmailAcesso(acesso);
+    fetch('/api/admin')
+      .then((r) => r.json())
+      .then((d) => ativo && setAdmin(d.admin === true))
+      .catch(() => {});
+    fetch(`/api/doadores/${id}`, { headers: acesso ? { 'x-email-acesso': acesso } : {} })
       .then((r) => r.json())
       .then((dados) => {
         if (!ativo) return;
@@ -64,13 +75,14 @@ export default function EditarDoador() {
     <div>
       <div className="titulo-pagina">
         <h1>Editar cadastro</h1>
-        <p>Mude seus dados, avise que está indisponível depois de doar ou exclua o cadastro.</p>
+        <p>Mude seus dados ou avise que está indisponível depois de doar.</p>
       </div>
 
-      <FormularioDoador modo="editar" idDoador={id} doadorInicial={doador} />
+      <FormularioDoador modo="editar" idDoador={id} doadorInicial={doador} emailAcesso={emailAcesso} />
 
+      {admin && (
       <section className="secao">
-        <h2>Excluir cadastro</h2>
+        <h2>Excluir cadastro (administrador)</h2>
         {erroExclusao && <Aviso aviso={{ tipo: 'erro', texto: erroExclusao }} />}
 
         {confirmando ? (
@@ -96,11 +108,12 @@ export default function EditarDoador() {
           <>
             <p>Se não quiser mais aparecer nas buscas, você pode apagar o cadastro.</p>
             <button type="button" className="btn btn-secundario" onClick={() => setConfirmando(true)}>
-              Excluir meu cadastro
+              Excluir este cadastro
             </button>
           </>
         )}
       </section>
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { TIPOS_SANGUINEOS } from '@/lib/regras';
 import { cepEhValido, consultarCep } from '@/lib/viacep';
 import { geocodificarCep } from '@/lib/geolocalizacao';
 import { emailEhValido, normalizarEmail } from '@/lib/formatar';
+import { ehAdmin, podeAcessar } from '@/lib/admin';
 
 export async function PUT(requisicao, { params }) {
   try {
@@ -25,6 +26,12 @@ export async function PUT(requisicao, { params }) {
     const doador = await query.get(id);
     if (!doador) {
       return NextResponse.json({ erro: 'Doador não encontrado.' }, { status: 404 });
+    }
+    if (!podeAcessar(requisicao, doador)) {
+      return NextResponse.json(
+      { erro: 'Para mudar este cadastro, entre por “Meu cadastro” com o e-mail usado no cadastro.' },
+      { status: 403 }
+      );
     }
 
     // ---- Campos simples ----
@@ -101,7 +108,13 @@ export async function GET(requisicao, { params }) {
   try {
     const { id } = await params;
     const doador = await new Parse.Query(CLASSE_DOADOR).get(id);
-    // Aqui é o próprio doador editando: pode ver o CEP e o e-mail que cadastrou.
+    if (!podeAcessar(requisicao, doador)) {
+      return NextResponse.json(
+      { erro: 'Para mudar este cadastro, entre por “Meu cadastro” com o e-mail usado no cadastro.' },
+      { status: 403 }
+      );
+    }
+    // Aqui é o próprio doador (ou o administrador): pode ver o CEP e o e-mail cadastrados.
     return NextResponse.json({ ok: true, doador: parseParaObjeto(doador, { email: true, cep: true }) });
   } catch (erro) {
     // Código 101 do Parse = objeto não encontrado.
@@ -117,7 +130,11 @@ export async function GET(requisicao, { params }) {
 }
 
 // ---------------------------------------------------------------- DELETE
+// Só administrador pode excluir.
 export async function DELETE(requisicao, { params }) {
+  if (!ehAdmin(requisicao)) {
+    return NextResponse.json({ erro: 'Só o administrador pode excluir cadastros.' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     if (!id) {

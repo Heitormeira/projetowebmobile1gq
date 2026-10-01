@@ -13,6 +13,7 @@ export default function ListaDoadores() {
   const [tipoFiltro, setTipoFiltro] = useState('');
   const [cidadeFiltro, setCidadeFiltro] = useState('');
   const [busca, setBusca] = useState('');
+  const [admin, setAdmin] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
@@ -31,6 +32,10 @@ export default function ListaDoadores() {
     const salvo = lerAvisoSalvo();
     if (salvo) setAviso(salvo);
     carregar();
+    fetch('/api/admin')
+      .then((r) => r.json())
+      .then((d) => setAdmin(d.admin === true))
+      .catch(() => {});
   }, [carregar]);
 
   function aoExcluir(id) {
@@ -121,7 +126,8 @@ export default function ListaDoadores() {
             <DoadorCard
               key={d.id}
               doador={d}
-              podeGerenciar
+              podeGerenciar={admin}
+              podeExcluir={admin}
               mostrarContato={false}
               aoExcluir={aoExcluir}
               aoErro={(texto) => setAviso({ tipo: 'erro', texto })}

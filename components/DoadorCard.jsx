@@ -27,12 +27,14 @@ function situacaoDoDoador(doador) {
  * - mostrarContato: e-mail e botão de enviar mensagem. Nas listas públicas fica desligado,
  *   para não expor o e-mail de todo mundo; na busca de quem precisa de sangue fica ligado.
  * - Por privacidade, o cartão nunca mostra rua, CEP, mapa nem telefone: só bairro e cidade.
- * - podeGerenciar: mostra Editar e Excluir (com confirmação na própria tela).
+ * - podeGerenciar: mostra Editar.
+ * - podeExcluir: mostra Excluir (só para administrador; com confirmação na própria tela).
  * - aoErro(texto): avisa a página quando a exclusão falha.
  */
 export default function DoadorCard({
   doador,
   podeGerenciar = false,
+  podeExcluir = false,
   mostrarContato = true,
   aoExcluir,
   aoErro,
@@ -103,7 +105,7 @@ export default function DoadorCard({
         )}
       </dl>
 
-      {((mostrarContato && doador.email) || podeGerenciar) && !confirmando && (
+      {((mostrarContato && doador.email) || podeGerenciar || podeExcluir) && !confirmando && (
         <div className="acoes">
           {mostrarContato && doador.email && (
             <>
@@ -120,14 +122,14 @@ export default function DoadorCard({
           )}
 
           {podeGerenciar && (
-            <>
-              <Link className="btn btn-neutro" href={`/doadores/${doador.id}/editar`}>
-                Editar
-              </Link>
-              <button type="button" className="btn btn-secundario" onClick={() => setConfirmando(true)}>
-                Excluir
-              </button>
-            </>
+            <Link className="btn btn-neutro" href={`/doadores/${doador.id}/editar`}>
+              Editar
+            </Link>
+          )}
+          {podeExcluir && (
+            <button type="button" className="btn btn-secundario" onClick={() => setConfirmando(true)}>
+              Excluir
+            </button>
           )}
         </div>
       )}

@@ -24,6 +24,9 @@ export default function MeuCadastro() {
       const resposta = await fetch(`/api/meu-cadastro?email=${encodeURIComponent(email.trim())}`);
       const dados = await resposta.json();
       if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível buscar agora. Tente de novo.');
+      try {
+        sessionStorage.setItem('ss:acesso', email.trim().toLowerCase());
+      } catch {}
       setResultados(dados.doadores);
     } catch (e) {
       setAviso({ tipo: 'erro', texto: e.message });
@@ -43,8 +46,8 @@ export default function MeuCadastro() {
       <div className="titulo-pagina">
         <h1>Meu cadastro</h1>
         <p>
-          Digite o e-mail que você usou no cadastro para mudar seus dados, avisar que está
-          indisponível ou excluir o cadastro.
+          Digite o e-mail que você usou no cadastro para mudar seus dados ou avisar que está
+          indisponível.
         </p>
       </div>
 
